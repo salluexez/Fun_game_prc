@@ -10,34 +10,144 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListenableBuilder(
-        listenable: viewModel,
-        builder: (context, _) {
-          final state = viewModel.gameState;
-
-          return Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF0F2027),
-                  Color(0xFF203A43),
-                  Color(0xFF2C5364),
+      backgroundColor: const Color(0xFFF7F8FC), // Light grey background matching Daman app
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60.0),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 4,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Daman Logo
+                  ListenableBuilder(
+                    listenable: viewModel,
+                    builder: (context, _) {
+                      return Image.asset(
+                        viewModel.state.logoImagePath,
+                        height: 38,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback in case asset loading fails
+                          return const Text(
+                            'Daman',
+                            style: TextStyle(
+                              color: Color(0xFFF34C43),
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 1,
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  // Log in & Register Buttons
+                  Row(
+                    children: [
+                      // Log in Button
+                      SizedBox(
+                        height: 34,
+                        child: OutlinedButton(
+                          onPressed: viewModel.onLoginPressed,
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Color(0xFFF34C43), width: 1),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                            backgroundColor: Colors.white,
+                          ),
+                          child: const Text(
+                            'Log in',
+                            style: TextStyle(
+                              color: Color(0xFFF34C43),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Register Button
+                      GestureDetector(
+                        onTap: viewModel.onRegisterPressed,
+                        child: Container(
+                          height: 34,
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFF75C53), Color(0xFFF23D31)],
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                            ),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          alignment: Alignment.center,
+                          child: const Text(
+                            'Register',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
-            child: SafeArea(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                transitionBuilder: (child, animation) => FadeTransition(
-                  opacity: animation,
-                  child: ScaleTransition(scale: animation, child: child),
-                ),
-                child: state.status == GameStatus.playing
-                    ? _buildGamePlayScreen(state)
-                    : _buildMainMenuScreen(context, state),
-              ),
+          ),
+        ),
+      ),
+      body: ListenableBuilder(
+        listenable: viewModel,
+        builder: (context, _) {
+          final state = viewModel.state;
+
+          return SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 12),
+                
+                // 1. Banner Slider
+                _buildBannerSlider(state),
+                
+                const SizedBox(height: 12),
+                
+                // 2. Announcement Ticker
+                _buildAnnouncementTicker(context, state),
+                
+                const SizedBox(height: 12),
+                
+                // 3. Grid of Category Cards
+                _buildCategoriesGrid(context, state),
+                
+                const SizedBox(height: 16),
+                
+                // 4. Platform Recommendation Section Header
+                _buildPlatformRecommendationHeader(),
+                
+                // 5. Mock Recommendations (visually completes the screen layout)
+                _buildRecommendationContent(),
+                
+                const SizedBox(height: 30),
+              ],
             ),
           );
         },
@@ -45,257 +155,352 @@ class HomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildMainMenuScreen(BuildContext context, GameModel state) {
-    return Padding(
-      key: const ValueKey('MainMenu'),
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SizedBox(height: 20),
-          // App Title
-          ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Color(0xFFFF007F), Color(0xFF7F00FF)],
-            ).createShader(bounds),
-            child: const Text(
-              'RETRO ARCADE',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 36,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
-                color: Colors.white,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            state.message ?? 'Select a game to begin.',
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 16,
-            ),
-          ),
-          const SizedBox(height: 32),
-          // Game selection list
-          Expanded(
-            child: ListView.builder(
-              itemCount: viewModel.availableGames.length,
-              itemBuilder: (context, index) {
-                final gameName = viewModel.availableGames[index];
-                final isSelected = viewModel.selectedGame == gameName;
-
-                return GestureDetector(
-                  onTap: () => viewModel.selectGame(gameName),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF7F00FF).withOpacity(0.3)
-                          : Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isSelected
-                            ? const Color(0xFFFF007F)
-                            : Colors.white12,
-                        width: isSelected ? 2 : 1,
-                      ),
-                      boxShadow: isSelected
-                          ? [
-                              BoxShadow(
-                                color: const Color(0xFFFF007F).withOpacity(0.3),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                          : [],
+  Widget _buildBannerSlider(HomeState state) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0),
+      height: 160,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: PageView.builder(
+          itemCount: state.bannerImages.length,
+          onPageChanged: viewModel.updateBannerIndex,
+          itemBuilder: (context, index) {
+            return Image.asset(
+              state.bannerImages[index],
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF6B11FF), Color(0xFFB511FF)],
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? const Color(0xFFFF007F).withOpacity(0.2)
-                                    : Colors.white10,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                _getGameIcon(gameName),
-                                color: isSelected
-                                    ? const Color(0xFFFF007F)
-                                    : Colors.white70,
-                                size: 24,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Text(
-                              gameName,
-                              style: TextStyle(
-                                color: isSelected ? Colors.white : Colors.white.withOpacity(0.9),
-                                fontSize: 18,
-                                fontWeight: isSelected
-                                    ? FontWeight.bold
-                                    : FontWeight.normal,
-                              ),
-                            ),
-                          ],
-                        ),
-                        if (isSelected)
-                          const Icon(
-                            Icons.check_circle,
-                            color: Color(0xFFFF007F),
-                          ),
-                      ],
-                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    'Banner ${index + 1}',
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 );
               },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAnnouncementTicker(BuildContext context, HomeState state) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: const [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 4,
+            offset: Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Speaker Icon
+          const Icon(
+            Icons.volume_up,
+            color: Color(0xFFF34C43),
+            size: 20,
+          ),
+          const SizedBox(width: 8),
+          // Scrolling Text Container
+          Expanded(
+            child: SizedBox(
+              height: 20,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                physics: const NeverScrollableScrollPhysics(),
+                children: [
+                  Center(
+                    child: Text(
+                      state.announcement,
+                      style: const TextStyle(
+                        color: Color(0xFF333333),
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          // Action Button
-          ElevatedButton(
-            onPressed: viewModel.selectedGame != null
-                ? () => viewModel.startGame()
-                : null,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF007F),
-              disabledBackgroundColor: Colors.white10,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+          const SizedBox(width: 8),
+          // Detail button with flame icon
+          GestureDetector(
+            onTap: viewModel.onDetailPressed,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFF9695C), Color(0xFFF13E33)],
+                ),
+                borderRadius: BorderRadius.circular(20),
               ),
-              elevation: viewModel.selectedGame != null ? 8 : 0,
-            ),
-            child: Text(
-              viewModel.selectedGame != null
-                  ? 'PLAY ${viewModel.selectedGame!.toUpperCase()}'
-                  : 'SELECT A GAME',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.5,
-                color: viewModel.selectedGame != null
-                    ? Colors.white
-                    : Colors.white30,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.local_fire_department,
+                    color: Colors.white,
+                    size: 14,
+                  ),
+                  SizedBox(width: 2),
+                  Text(
+                    'Detail',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildGamePlayScreen(GameModel state) {
+  Widget _buildCategoriesGrid(BuildContext context, HomeState state) {
+    final largeCategories = state.categories.where((c) => c.isLarge).toList();
+    final mediumCategories = state.categories.where((c) => !c.isLarge).toList();
+
     return Padding(
-      key: const ValueKey('GamePlay'),
-      padding: const EdgeInsets.all(24.0),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Icon(
-            Icons.sports_esports_outlined,
-            size: 100,
-            color: Color(0xFFFF007F),
-          ),
-          const SizedBox(height: 24),
-          Text(
-            state.gameName,
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
+          // 1. Two Large Categories (Popular, Lottery)
+          Row(
+            children: largeCategories.map((category) {
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                  child: AspectRatio(
+                    aspectRatio: 1.8,
+                    child: _buildCategoryCard(category),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Game Mode Activated!',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white54,
+          
+          // 2. Six Medium Categories (Casino, Slots, Sports, Rummy, Fishing, Original) in 3 columns
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: mediumCategories.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              childAspectRatio: 1.45,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
             ),
+            itemBuilder: (context, index) {
+              return _buildCategoryCard(mediumCategories[index]);
+            },
           ),
-          const SizedBox(height: 40),
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.05),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.white10),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryCard(GameCategory category) {
+    return GestureDetector(
+      onTap: () => viewModel.onCategoryPressed(category),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
             ),
-            child: Column(
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.asset(
+            category.imagePath,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              // Detailed visual fallback in case images fail to load
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: category.gradientColors,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                ),
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      category.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Align(
+                      alignment: Alignment.bottomRight,
+                      child: Icon(
+                        Icons.play_circle_fill,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                    )
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPlatformRecommendationHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Left: Flame icon + Title
+          const Row(
+            children: [
+              Icon(
+                Icons.local_fire_department,
+                color: Color(0xFFF34C43),
+                size: 22,
+              ),
+              SizedBox(width: 4),
+              Text(
+                'Platform recommendation',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF222222),
+                ),
+              ),
+            ],
+          ),
+          // Right: "All 6 >" Button
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.black12, width: 0.8),
+            ),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF007F)),
-                ),
-                const SizedBox(height: 20),
                 Text(
-                  'Current Score: ${state.score}',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white70,
+                  'All 6',
+                  style: TextStyle(
+                    color: Color(0xFF555555),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Waiting for user implementation step...',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white38,
-                    fontStyle: FontStyle.italic,
-                  ),
+                SizedBox(width: 2),
+                Icon(
+                  Icons.arrow_forward_ios,
+                  color: Color(0xFF777777),
+                  size: 10,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 48),
-          OutlinedButton(
-            onPressed: () => viewModel.resetGame(),
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Colors.white30),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecommendationContent() {
+    // Standard mock cards representing recommendations below the fold
+    return Padding(
+      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 12.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 120,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.gamepad, color: Color(0xFFF34C43), size: 36),
+                  SizedBox(height: 8),
+                  Text(
+                    'Win Go 1Min',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             ),
-            child: const Text(
-              'BACK TO MENU',
-              style: TextStyle(
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Container(
+              height: 120,
+              decoration: BoxDecoration(
                 color: Colors.white,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.casino, color: Color(0xFF8B2EFF), size: 36),
+                  SizedBox(height: 8),
+                  Text(
+                    'Trx Hash 3Min',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             ),
           ),
         ],
       ),
     );
-  }
-
-  IconData _getGameIcon(String gameName) {
-    switch (gameName) {
-      case 'Tic-Tac-Toe':
-        return Icons.grid_3x3;
-      case 'Memory Match':
-        return Icons.style;
-      case 'Number Guessing':
-        return Icons.question_mark;
-      case 'Snake Classic':
-        return Icons.gesture;
-      default:
-        return Icons.gamepad;
-    }
   }
 }

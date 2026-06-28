@@ -1,29 +1,29 @@
-enum GameStatus { idle, playing, won, lost, draw }
+import 'package:flutter/material.dart';
 
-class GameModel {
-  final String gameName;
-  final GameStatus status;
-  final int score;
-  final String? message;
+class GameCategory {
+  final String title;
+  final String imagePath;
+  final bool isLarge;
+  final List<Color> gradientColors;
 
-  const GameModel({
-    required this.gameName,
-    this.status = GameStatus.idle,
-    this.score = 0,
-    this.message,
+  const GameCategory({
+    required this.title,
+    required this.imagePath,
+    this.isLarge = false,
+    required this.gradientColors,
   });
+}
 
-  GameModel copyWith({
-    String? gameName,
-    GameStatus? status,
-    int? score,
-    String? message,
-  }) {
-    return GameModel(
-      gameName: gameName ?? this.gameName,
-      status: status ?? this.status,
-      score: score ?? this.score,
-      message: message ?? this.message,
-    );
-  }
+class HomeState {
+  final List<String> bannerImages;
+  final String announcement;
+  final List<GameCategory> categories;
+  final String logoImagePath;
+
+  const HomeState({
+    required this.bannerImages,
+    required this.announcement,
+    required this.categories,
+    required this.logoImagePath,
+  });
 }

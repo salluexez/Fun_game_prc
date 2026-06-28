@@ -17,18 +17,21 @@ class MyApp extends StatelessWidget {
     final homeViewModel = HomeViewModel();
 
     return MaterialApp(
-      title: 'Retro Game Arcade',
+      title: 'Daman Games',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        brightness: Brightness.dark,
-        primaryColor: const Color(0xFFFF007F),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFFF007F),
-          secondary: Color(0xFF7F00FF),
-          background: Color(0xFF0F2027),
+        brightness: Brightness.light,
+        primaryColor: const Color(0xFFF34C43),
+        scaffoldBackgroundColor: const Color(0xFFF7F8FC),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFF34C43),
+          primary: const Color(0xFFF34C43),
+          secondary: const Color(0xFFF23D31),
+          background: const Color(0xFFF7F8FC),
+          brightness: Brightness.light,
         ),
         useMaterial3: true,
-        fontFamily: 'Roboto', // Default clean font
+        fontFamily: 'Roboto',
       ),
       home: HomeView(viewModel: homeViewModel),
     );
