@@ -146,6 +146,27 @@ class HomeView extends StatelessWidget {
                 // 5. Mock Recommendations (visually completes the screen layout)
                 _buildRecommendationContent(),
                 
+                const SizedBox(height: 16),
+                
+                // 6. Winning Information Section Header
+                _buildWinningInfoHeader(),
+                
+                // 7. Dynamic Winning Information List
+                WinningWinningsTicker(winnings: state.winnings),
+                
+                const SizedBox(height: 16),
+                
+                // 8. Platform Disclaimer & Information Container
+                _buildPlatformDisclaimerCard(),
+                
+                const SizedBox(height: 12),
+                
+                // 9. Platform Menu Options Card
+                _buildPlatformMenuCard(),
+                
+                // 10. Add to Desktop Capsule Button
+                _buildAddToDesktopButton(),
+                
                 const SizedBox(height: 30),
               ],
             ),
@@ -510,6 +531,530 @@ class HomeView extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildWinningInfoHeader() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: Row(
+        children: [
+          Container(
+            width: 3.5,
+            height: 18,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF34C43),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 8),
+          const Text(
+            'Winning information',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF222222),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlatformDisclaimerCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      padding: const EdgeInsets.all(20.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildDisclaimerRow(
+            'The platform advocates fairness, justice, and openness. We mainly operate fair lottery, blockchain games, live casinos, and slot machine games.',
+          ),
+          const SizedBox(height: 16),
+          _buildDisclaimerRow(
+            'Welcome to Daman Games works with more than 10,000 online live game dealers and slot games, all of which are verified fair games.',
+          ),
+          const SizedBox(height: 16),
+          _buildDisclaimerRow(
+            'Welcome to Daman Games supports fast deposit and withdrawal, and looks forward to your visit.',
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'Gambling can be addictive, please play rationally.',
+            style: TextStyle(
+              color: Color(0xFFF75C56),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Welcome to Daman Games only accepts customers above the age of 18.',
+            style: TextStyle(
+              color: Color(0xFFF75C56),
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              height: 1.4,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDisclaimerRow(String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(top: 2.0),
+          child: Text(
+            '♦ ',
+            style: TextStyle(
+              color: Color(0xFFF75C56),
+              fontSize: 13,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              color: Color(0xFF555555),
+              fontSize: 13,
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPlatformMenuCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildMenuItem(
+            icon: Icons.public,
+            title: 'Language',
+            onTap: () => viewModel.onCategoryPressed(
+              const GameCategory(
+                title: 'Language',
+                imagePath: '',
+                gradientColors: [],
+              ),
+            ),
+          ),
+          _buildDivider(),
+          _buildMenuItem(
+            icon: Icons.campaign,
+            title: 'Announcement',
+            onTap: () => viewModel.onDetailPressed(),
+          ),
+          _buildDivider(),
+          _buildMenuItem(
+            icon: Icons.support_agent,
+            title: '24/7 Customer service',
+            onTap: () => viewModel.onCategoryPressed(
+              const GameCategory(
+                title: 'Customer Service',
+                imagePath: '',
+                gradientColors: [],
+              ),
+            ),
+          ),
+          _buildDivider(),
+          _buildMenuItem(
+            icon: Icons.menu_book,
+            title: "Beginner's Guide",
+            onTap: () => viewModel.onCategoryPressed(
+              const GameCategory(
+                title: 'Beginner Guide',
+                imagePath: '',
+                gradientColors: [],
+              ),
+            ),
+          ),
+          _buildDivider(),
+          _buildMenuItem(
+            icon: Icons.inventory_2,
+            title: 'About us',
+            onTap: () => viewModel.onCategoryPressed(
+              const GameCategory(
+                title: 'About Us',
+                imagePath: '',
+                gradientColors: [],
+              ),
+            ),
+          ),
+          _buildDivider(),
+          _buildMenuItem(
+            icon: Icons.file_download,
+            title: 'Download APP',
+            showDivider: false,
+            onTap: () => viewModel.onCategoryPressed(
+              const GameCategory(
+                title: 'Download App',
+                imagePath: '',
+                gradientColors: [],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool showDivider = true,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: const Color(0xFFFA6557),
+              size: 24,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Color(0xFF222222),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey,
+              size: 14,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDivider() {
+    return const Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Divider(
+        color: Color(0xFFF1F3F9),
+        height: 1,
+        thickness: 1,
+      ),
+    );
+  }
+
+  Widget _buildAddToDesktopButton() {
+    return Center(
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 16.0),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFFFA776D), Color(0xFFF15147)],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFF15147).withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => debugPrint('Add to Desktop clicked'),
+            borderRadius: BorderRadius.circular(30),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 24,
+                    height: 24,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                    ),
+                    padding: const EdgeInsets.all(2),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/logo/h5setting_20240423194834yt8f.png',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'Add to Desktop',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// Animated list ticker that handles adding new winnings smoothly
+// -------------------------------------------------------------
+class WinningWinningsTicker extends StatefulWidget {
+  final List<WinningInfo> winnings;
+
+  const WinningWinningsTicker({super.key, required this.winnings});
+
+  @override
+  State<WinningWinningsTicker> createState() => _WinningWinningsTickerState();
+}
+
+class _WinningWinningsTickerState extends State<WinningWinningsTicker> {
+  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  final List<WinningInfo> _localList = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _localList.addAll(widget.winnings);
+  }
+
+  @override
+  void didUpdateWidget(covariant WinningWinningsTicker oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.winnings.isEmpty) return;
+
+    // Check if a new winning item was added at the top
+    if (oldWidget.winnings.isEmpty || 
+        widget.winnings.first.username != oldWidget.winnings.first.username) {
+      final newItem = widget.winnings.first;
+      
+      // 1. Insert the new item at index 0 in the AnimatedList
+      _localList.insert(0, newItem);
+      _listKey.currentState?.insertItem(0, duration: const Duration(milliseconds: 600));
+
+      // 2. If list exceeds maximum displayed winners (5), remove the last item
+      if (_localList.length > 5) {
+        final removedItem = _localList.removeAt(5);
+        _listKey.currentState?.removeItem(
+          5,
+          (context, animation) => _buildWinningItemCard(removedItem, animation),
+          duration: const Duration(milliseconds: 600),
+        );
+      }
+    }
+  }
+
+  List<Color> _getGameGradient(String path) {
+    if (path.contains('lotterycategory_')) {
+      return const [Color(0xFFFA6557), Color(0xFFF13D30)];
+    }
+    if (path.contains('gamecategory_20240412114911i998.png')) {
+      return const [Color(0xFFFF8B7D), Color(0xFFFF4935)]; // Casino
+    }
+    if (path.contains('gamecategory_20240412114929rkd9.png')) {
+      return const [Color(0xFFA17DFF), Color(0xFF6732FF)]; // Slots
+    }
+    if (path.contains('gamecategory_20240412114921c1tg.png')) {
+      return const [Color(0xFFFFB752), Color(0xFFFF8800)]; // Sports
+    }
+    if (path.contains('gamecategory_2024041211490142rl.png')) {
+      return const [Color(0xFF68B2FF), Color(0xFF2675FF)]; // Rummy
+    }
+    if (path.contains('gamecategory_20240412114848em94.png')) {
+      return const [Color(0xFFFF7E9B), Color(0xFFFA2C5E)]; // Fishing
+    }
+    if (path.contains('gamecategory_20240412114937mcis.png')) {
+      return const [Color(0xFF5EDFFF), Color(0xFF00A2C9)]; // Original
+    }
+    return const [Color(0xFFFA6557), Color(0xFFF13D30)];
+  }
+
+  Widget _buildWinningItemCard(WinningInfo info, Animation<double> animation) {
+    // Combine Fade and Slide transition for an elegant scrolling drop effect
+    final offsetAnimation = Tween<Offset>(
+      begin: const Offset(0.0, -0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutBack,
+    ));
+
+    return FadeTransition(
+      opacity: animation,
+      child: SlideTransition(
+        position: offsetAnimation,
+        child: SizeTransition(
+          sizeFactor: animation,
+          axisAlignment: 0.0,
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                // Cartoon Avatar
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Color(0xFFF1F3F9),
+                  ),
+                  child: ClipOval(
+                    child: Image.network(
+                      info.avatarUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.account_circle,
+                        color: Colors.grey,
+                        size: 38,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Masked Username
+                Expanded(
+                  child: Text(
+                    info.username,
+                    style: const TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF333333),
+                    ),
+                  ),
+                ),
+                // Vendor Game Image
+                Container(
+                  height: 38,
+                  width: 66,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF1F3F9),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      info.gameImagePath,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                // Receive text and amount
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    RichText(
+                      text: TextSpan(
+                        children: [
+                          const TextSpan(
+                            text: 'Receive ',
+                            style: TextStyle(
+                              color: Color(0xFF222222),
+                              fontSize: 12.5,
+                            ),
+                          ),
+                          TextSpan(
+                            text: '₹${info.amount.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              color: Color(0xFF222222),
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Winning amount',
+                      style: TextStyle(
+                        color: Color(0xFF999999),
+                        fontSize: 11,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedList(
+      key: _listKey,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      initialItemCount: _localList.length,
+      itemBuilder: (context, index, animation) {
+        return _buildWinningItemCard(_localList[index], animation);
+      },
     );
   }
 }

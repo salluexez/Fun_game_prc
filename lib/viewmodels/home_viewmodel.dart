@@ -1,10 +1,48 @@
+import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/game_model.dart';
 
 class HomeViewModel extends ChangeNotifier {
-  late final HomeState _state;
+  late HomeState _state;
+  Timer? _winningTimer;
+  final Random _random = Random();
 
   HomeViewModel() {
+    // Initial winnings seed matching the screenshot
+    final initialWinnings = [
+      const WinningInfo(
+        username: 'Mem***LBU',
+        avatarUrl: 'https://api.dicebear.com/7.x/adventurer/png?seed=LBU',
+        gameImagePath: 'assets/images/main_screen_images/vendorlogo_20250819141232etgc.png',
+        amount: 230.40,
+      ),
+      const WinningInfo(
+        username: 'Mem***ZUR',
+        avatarUrl: 'https://api.dicebear.com/7.x/adventurer/png?seed=ZUR',
+        gameImagePath: 'assets/images/main_screen_images/vendorlogo_20250819141232etgc.png',
+        amount: 4704.00,
+      ),
+      const WinningInfo(
+        username: 'Mem***PZA',
+        avatarUrl: 'https://api.dicebear.com/7.x/adventurer/png?seed=PZA',
+        gameImagePath: 'assets/images/main_screen_images/vendorlogo_20250819141232etgc.png',
+        amount: 1960.00,
+      ),
+      const WinningInfo(
+        username: 'Mem***RJJ',
+        avatarUrl: 'https://api.dicebear.com/7.x/adventurer/png?seed=RJJ',
+        gameImagePath: 'assets/images/main_screen_images/vendorlogo_20250819141232etgc.png',
+        amount: 10584.00,
+      ),
+      const WinningInfo(
+        username: 'Mem***HMT',
+        avatarUrl: 'https://api.dicebear.com/7.x/adventurer/png?seed=HMT',
+        gameImagePath: 'assets/images/main_screen_images/vendorlogo_20250819141232etgc.png',
+        amount: 392.00,
+      ),
+    ];
+
     _state = HomeState(
       logoImagePath: 'assets/images/logo/h5setting_20240423194834yt8f.png',
       bannerImages: const [
@@ -94,7 +132,13 @@ class HomeViewModel extends ChangeNotifier {
           gradientColors: [Color(0xFFFA6557), Color(0xFFF13D30)],
         ),
       ],
+      winnings: initialWinnings,
     );
+
+    // Auto-generate a new winner every 2.5 seconds
+    _winningTimer = Timer.periodic(const Duration(seconds: 2, milliseconds: 500), (timer) {
+      _generateRandomWinner();
+    });
   }
 
   HomeState get state => _state;
@@ -107,9 +151,50 @@ class HomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _generateRandomWinner() {
+    // Generate random 3 letter suffix for name
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    final suffix = String.fromCharCodes(
+      Iterable.generate(3, (_) => alphabet.codeUnitAt(_random.nextInt(alphabet.length))),
+    );
+    final username = 'Mem***$suffix';
+    final avatarUrl = 'https://api.dicebear.com/7.x/adventurer/png?seed=$suffix';
+
+    const gameImagePath = 'assets/images/main_screen_images/vendorlogo_20250819141232etgc.png';
+
+    // Random amount between 100 and 35000, formatted cleanly
+    final amount = (_random.nextDouble() * 34900 + 100);
+    // Rounded to two decimal places
+    final roundedAmount = double.parse(amount.toStringAsFixed(2));
+
+    final newWinner = WinningInfo(
+      username: username,
+      avatarUrl: avatarUrl,
+      gameImagePath: gameImagePath,
+      amount: roundedAmount,
+    );
+
+    // Prepend new winner and remove oldest if exceeds 5
+    final updatedWinnings = List<WinningInfo>.from(_state.winnings);
+    updatedWinnings.insert(0, newWinner);
+    if (updatedWinnings.length > 5) {
+      updatedWinnings.removeLast();
+    }
+
+    _state = HomeState(
+      logoImagePath: _state.logoImagePath,
+      bannerImages: _state.bannerImages,
+      announcement: _state.announcement,
+      categories: _state.categories,
+      recommendations: _state.recommendations,
+      winnings: updatedWinnings,
+    );
+
+    notifyListeners();
+  }
+
   void onCategoryPressed(GameCategory category) {
     debugPrint('Selected category: ${category.title}');
-    // We can add navigation or action logic here when they choose a category
   }
 
   void onLoginPressed() {
@@ -122,5 +207,11 @@ class HomeViewModel extends ChangeNotifier {
 
   void onDetailPressed() {
     debugPrint('Announcement details pressed');
+  }
+
+  @override
+  void dispose() {
+    _winningTimer?.cancel();
+    super.dispose();
   }
 }

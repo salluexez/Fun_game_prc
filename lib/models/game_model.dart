@@ -28,12 +28,27 @@ class RecommendedGame {
   });
 }
 
+class WinningInfo {
+  final String username;
+  final String avatarUrl;
+  final String gameImagePath;
+  final double amount;
+
+  const WinningInfo({
+    required this.username,
+    required this.avatarUrl,
+    required this.gameImagePath,
+    required this.amount,
+  });
+}
+
 class HomeState {
   final List<String> bannerImages;
   final String announcement;
   final List<GameCategory> categories;
   final String logoImagePath;
   final List<RecommendedGame> recommendations;
+  final List<WinningInfo> winnings;
 
   const HomeState({
     required this.bannerImages,
@@ -41,5 +56,6 @@ class HomeState {
     required this.categories,
     required this.logoImagePath,
     required this.recommendations,
+    required this.winnings,
   });
 }

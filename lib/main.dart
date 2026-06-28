@@ -6,16 +6,30 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Instantiate our HomeViewModel. For this simple app, we can pass it down
-    // or instantiate it here directly. If we need global state management later,
-    // we can use standard dependency injection or provider.
-    final homeViewModel = HomeViewModel();
+  State<MyApp> createState() => _MyAppState();
+}
 
+class _MyAppState extends State<MyApp> {
+  late final HomeViewModel _homeViewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _homeViewModel = HomeViewModel();
+  }
+
+  @override
+  void dispose() {
+    _homeViewModel.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Daman Games',
       debugShowCheckedModeBanner: false,
@@ -33,7 +47,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
-      home: HomeView(viewModel: homeViewModel),
+      home: HomeView(viewModel: _homeViewModel),
     );
   }
 }
