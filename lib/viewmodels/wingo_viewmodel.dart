@@ -20,7 +20,7 @@ class WingoViewModel extends ChangeNotifier {
   WingoState get state => _state;
 
   void _initializeGame(WingoTabType tab) {
-    // Generate initial draws matching the screenshot
+    // Generate initial draws
     final initialHistory = _generateInitialHistory();
     final periodId = _generateStartPeriodId(tab);
     final duration = _getDuration(tab);
@@ -31,12 +31,19 @@ class WingoViewModel extends ChangeNotifier {
       periodId: periodId,
       history: initialHistory,
       multiplier: 1,
+      activeHistoryTab: WingoHistoryTab.gameHistory,
     );
   }
 
   void selectTab(WingoTabType tab) {
     if (_state.activeTab == tab) return;
     _initializeGame(tab);
+    notifyListeners();
+  }
+
+  void selectHistoryTab(WingoHistoryTab tab) {
+    if (_state.activeHistoryTab == tab) return;
+    _state = _state.copyWith(activeHistoryTab: tab);
     notifyListeners();
   }
 
@@ -66,7 +73,6 @@ class WingoViewModel extends ChangeNotifier {
     final now = DateTime.now();
     final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
     final typeCode = _getTabTypeCode(tab);
-    // E.g. 20260628 10005 2198
     final randVal = 100000 + _random.nextInt(900000);
     return '$dateStr$typeCode$randVal';
   }
@@ -96,7 +102,7 @@ class WingoViewModel extends ChangeNotifier {
   }
 
   List<DrawResult> _generateInitialHistory() {
-    return List.generate(5, (_) => _generateRandomDrawResult());
+    return List.generate(10, (_) => _generateRandomDrawResult());
   }
 
   DrawResult _generateRandomDrawResult() {
@@ -123,11 +129,10 @@ class WingoViewModel extends ChangeNotifier {
   void _tick() {
     int nextTime = _state.timeRemaining - 1;
     if (nextTime <= 0) {
-      // Draw time! Generate new winner
       final newDraw = _generateRandomDrawResult();
       final newHistory = List<DrawResult>.from(_state.history);
       newHistory.insert(0, newDraw);
-      if (newHistory.length > 5) {
+      if (newHistory.length > 10) {
         newHistory.removeLast();
       }
 

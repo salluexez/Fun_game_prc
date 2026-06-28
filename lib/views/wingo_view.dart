@@ -74,6 +74,16 @@ class _WingoContent extends StatelessWidget {
             // 4. Color & Number Bet Selection Options
             _buildBetControlsCard(context, viewModel, state),
 
+            const SizedBox(height: 16),
+
+            // 5. History Tabs Selector
+            _buildHistoryTabs(context, viewModel, state),
+
+            const SizedBox(height: 12),
+
+            // 6. Selected History Content (Table or Placeholder)
+            _buildHistoryContent(context, viewModel, state),
+
             const SizedBox(height: 30),
           ],
         ),
@@ -265,9 +275,8 @@ class _WingoContent extends StatelessWidget {
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      // Previous draw circles
                       Row(
-                        children: state.history
+                        children: state.history.take(5)
                             .map((res) => _buildDrawResultCircle(res, viewModel))
                             .toList(),
                       ),
@@ -671,6 +680,277 @@ class _WingoContent extends StatelessWidget {
         return 'WinGo 3 Min';
       case WingoTabType.minute5:
         return 'WinGo 5 Min';
+    }
+  }
+
+  Widget _buildHistoryTabs(BuildContext context, WingoViewModel viewModel, WingoState state) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+        children: [
+          _buildHistoryTabButton(viewModel, state, WingoHistoryTab.gameHistory, 'Game history'),
+          const SizedBox(width: 8),
+          _buildHistoryTabButton(viewModel, state, WingoHistoryTab.chart, 'Chart'),
+          const SizedBox(width: 8),
+          _buildHistoryTabButton(viewModel, state, WingoHistoryTab.followStrategy, 'Follow Strategy'),
+          const SizedBox(width: 8),
+          _buildHistoryTabButton(viewModel, state, WingoHistoryTab.myHistory, 'My history'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryTabButton(
+    WingoViewModel viewModel,
+    WingoState state,
+    WingoHistoryTab tabType,
+    String label,
+  ) {
+    final isSelected = state.activeHistoryTab == tabType;
+    return GestureDetector(
+      onTap: () => viewModel.selectHistoryTab(tabType),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: isSelected
+              ? const LinearGradient(
+                  colors: [Color(0xFFFA776D), Color(0xFFF15147)],
+                )
+              : null,
+          color: isSelected ? null : Colors.white,
+          borderRadius: BorderRadius.circular(10),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: isSelected ? Colors.white : const Color(0xFF777777),
+            fontWeight: FontWeight.bold,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryContent(BuildContext context, WingoViewModel viewModel, WingoState state) {
+    switch (state.activeHistoryTab) {
+      case WingoHistoryTab.gameHistory:
+        return _buildGameHistoryTable(context, viewModel, state);
+      case WingoHistoryTab.chart:
+        return _buildPlaceholderTab('Chart data analysis coming soon...');
+      case WingoHistoryTab.followStrategy:
+        return _buildPlaceholderTab('Strategy recommendations coming soon...');
+      case WingoHistoryTab.myHistory:
+        return _buildPlaceholderTab('Your personal bet history is empty.');
+    }
+  }
+
+  Widget _buildPlaceholderTab(String text) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: const EdgeInsets.symmetric(vertical: 40.0, horizontal: 16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.01),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500),
+      ),
+    );
+  }
+
+  Widget _buildGameHistoryTable(BuildContext context, WingoViewModel viewModel, WingoState state) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: [
+            // Table Header Row
+            Container(
+              color: const Color(0xFFF15147),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: const Row(
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Text(
+                      'Period',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Number',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Big Small',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      'Color',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Table Rows
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: state.history.length,
+              separatorBuilder: (context, index) => const Divider(
+                color: Color(0xFFF1F3F9),
+                height: 1,
+                thickness: 1,
+              ),
+              itemBuilder: (context, index) {
+                final result = state.history[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12.0),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        flex: 4,
+                        child: Text(
+                          _getPeriodIdForIndex(state.periodId, index),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xFF555555),
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      // Number Column (Styled gradient or solid text)
+                      Expanded(
+                        flex: 2,
+                        child: _buildGradientNumberText(result.number, result.colors),
+                      ),
+                      // Big Small Column
+                      Expanded(
+                        flex: 2,
+                        child: Text(
+                          result.bigSmall,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xFF333333),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                      // Color Dots Column
+                      Expanded(
+                        flex: 2,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: result.colors.map((color) {
+                            return Container(
+                              width: 10,
+                              height: 10,
+                              margin: const EdgeInsets.symmetric(horizontal: 2.0),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: color,
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGradientNumberText(int number, List<Color> colors) {
+    if (colors.length == 1) {
+      return Text(
+        '$number',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          color: colors.first,
+          fontSize: 17,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+    // Render gradient text for split colors (0 and 5)
+    return ShaderMask(
+      shaderCallback: (bounds) => LinearGradient(
+        colors: colors,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
+      child: Text(
+        '$number',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 17,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  String _getPeriodIdForIndex(String currentPeriod, int index) {
+    try {
+      final base = currentPeriod.substring(0, currentPeriod.length - 4);
+      final count = int.parse(currentPeriod.substring(currentPeriod.length - 4));
+      final targetCount = count - (index + 1);
+      final targetCountStr = targetCount.toString().padLeft(4, '0');
+      return '$base$targetCountStr';
+    } catch (_) {
+      return currentPeriod;
     }
   }
 }
