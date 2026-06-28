@@ -10,7 +10,6 @@ enum WingoTabType {
 enum WingoHistoryTab {
   gameHistory,
   chart,
-  followStrategy,
   myHistory,
 }
 
@@ -28,6 +27,7 @@ class DrawResult {
 
 class WingoBet {
   final String periodId;
+  final WingoTabType tabType;
   final String choice;
   final double amount;
   final DateTime timestamp;
@@ -37,6 +37,7 @@ class WingoBet {
 
   const WingoBet({
     required this.periodId,
+    required this.tabType,
     required this.choice,
     required this.amount,
     required this.timestamp,
@@ -47,6 +48,7 @@ class WingoBet {
 
   WingoBet copyWith({
     String? periodId,
+    WingoTabType? tabType,
     String? choice,
     double? amount,
     DateTime? timestamp,
@@ -56,6 +58,7 @@ class WingoBet {
   }) {
     return WingoBet(
       periodId: periodId ?? this.periodId,
+      tabType: tabType ?? this.tabType,
       choice: choice ?? this.choice,
       amount: amount ?? this.amount,
       timestamp: timestamp ?? this.timestamp,
@@ -74,6 +77,12 @@ class WingoState {
   final int multiplier;
   final WingoHistoryTab activeHistoryTab;
   final List<WingoBet> myBets;
+  final int chartPage;
+  
+  // Parallel background tracking fields
+  final Map<WingoTabType, List<DrawResult>> allHistories;
+  final Map<WingoTabType, String> allPeriodIds;
+  final Map<WingoTabType, int> allTimeRemaining;
 
   const WingoState({
     required this.activeTab,
@@ -83,6 +92,10 @@ class WingoState {
     required this.multiplier,
     required this.activeHistoryTab,
     required this.myBets,
+    required this.chartPage,
+    required this.allHistories,
+    required this.allPeriodIds,
+    required this.allTimeRemaining,
   });
 
   WingoState copyWith({
@@ -93,8 +106,12 @@ class WingoState {
     int? multiplier,
     WingoHistoryTab? activeHistoryTab,
     List<WingoBet>? myBets,
+    int? chartPage,
+    Map<WingoTabType, List<DrawResult>>? allHistories,
+    Map<WingoTabType, String>? allPeriodIds,
+    Map<WingoTabType, int>? allTimeRemaining,
   }) {
-    // Defensive check: if hot reload left activeHistoryTab or myBets uninitialized/null in memory
+    // Defensive check: if hot reload left properties uninitialized/null in memory
     WingoHistoryTab fallbackHistoryTab = WingoHistoryTab.gameHistory;
     try {
       final dynamic currentTab = this.activeHistoryTab;
@@ -111,6 +128,38 @@ class WingoState {
       }
     } catch (_) {}
 
+    int fallbackChartPage = 1;
+    try {
+      final dynamic currentPage = this.chartPage;
+      if (currentPage != null) {
+        fallbackChartPage = currentPage as int;
+      }
+    } catch (_) {}
+
+    Map<WingoTabType, List<DrawResult>> fallbackAllHistories = const {};
+    try {
+      final dynamic currentAllHistories = this.allHistories;
+      if (currentAllHistories != null) {
+        fallbackAllHistories = Map<WingoTabType, List<DrawResult>>.from(currentAllHistories);
+      }
+    } catch (_) {}
+
+    Map<WingoTabType, String> fallbackAllPeriodIds = const {};
+    try {
+      final dynamic currentAllPeriodIds = this.allPeriodIds;
+      if (currentAllPeriodIds != null) {
+        fallbackAllPeriodIds = Map<WingoTabType, String>.from(currentAllPeriodIds);
+      }
+    } catch (_) {}
+
+    Map<WingoTabType, int> fallbackAllTimeRemaining = const {};
+    try {
+      final dynamic currentAllTimeRemaining = this.allTimeRemaining;
+      if (currentAllTimeRemaining != null) {
+        fallbackAllTimeRemaining = Map<WingoTabType, int>.from(currentAllTimeRemaining);
+      }
+    } catch (_) {}
+
     return WingoState(
       activeTab: activeTab ?? this.activeTab,
       timeRemaining: timeRemaining ?? this.timeRemaining,
@@ -119,6 +168,10 @@ class WingoState {
       multiplier: multiplier ?? this.multiplier,
       activeHistoryTab: activeHistoryTab ?? fallbackHistoryTab,
       myBets: myBets ?? fallbackBets,
+      chartPage: chartPage ?? fallbackChartPage,
+      allHistories: allHistories ?? fallbackAllHistories,
+      allPeriodIds: allPeriodIds ?? fallbackAllPeriodIds,
+      allTimeRemaining: allTimeRemaining ?? fallbackAllTimeRemaining,
     );
   }
 }

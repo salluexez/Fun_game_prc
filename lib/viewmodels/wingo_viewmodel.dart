@@ -4,11 +4,14 @@ import 'package:flutter/material.dart';
 import '../models/wingo_model.dart';
 
 class WingoViewModel extends ChangeNotifier {
+  static final WingoViewModel _instance = WingoViewModel._internal();
+  factory WingoViewModel() => _instance;
+
   late WingoState _state;
   Timer? _timer;
   final Random _random = Random();
 
-  WingoViewModel() {
+  WingoViewModel._internal() {
     _initializeGame(WingoTabType.seconds30);
 
     // Start running the countdown timer
@@ -19,26 +22,43 @@ class WingoViewModel extends ChangeNotifier {
 
   WingoState get state => _state;
 
-  void _initializeGame(WingoTabType tab) {
-    // Generate initial draws
-    final initialHistory = _generateInitialHistory();
-    final periodId = _generateStartPeriodId(tab);
-    final duration = _getDuration(tab);
+  void _initializeGame(WingoTabType activeTab) {
+    final now = DateTime.now();
+
+    final Map<WingoTabType, List<DrawResult>> allHistories = {};
+    final Map<WingoTabType, String> allPeriodIds = {};
+    final Map<WingoTabType, int> allTimeRemaining = {};
+
+    for (final tab in WingoTabType.values) {
+      allHistories[tab] = _generateInitialHistory();
+      allPeriodIds[tab] = _calculatePeriodId(tab, now);
+      allTimeRemaining[tab] = _calculateRemainingTime(tab, now);
+    }
 
     _state = WingoState(
-      activeTab: tab,
-      timeRemaining: duration,
-      periodId: periodId,
-      history: initialHistory,
+      activeTab: activeTab,
+      timeRemaining: allTimeRemaining[activeTab]!,
+      periodId: allPeriodIds[activeTab]!,
+      history: allHistories[activeTab]!,
       multiplier: 1,
       activeHistoryTab: WingoHistoryTab.gameHistory,
       myBets: const [],
+      chartPage: 1,
+      allHistories: allHistories,
+      allPeriodIds: allPeriodIds,
+      allTimeRemaining: allTimeRemaining,
     );
   }
 
   void selectTab(WingoTabType tab) {
     if (_state.activeTab == tab) return;
-    _initializeGame(tab);
+    _state = _state.copyWith(
+      activeTab: tab,
+      timeRemaining: _state.allTimeRemaining[tab]!,
+      periodId: _state.allPeriodIds[tab]!,
+      history: _state.allHistories[tab]!,
+      chartPage: 1,
+    );
     notifyListeners();
   }
 
@@ -53,12 +73,31 @@ class WingoViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setChartPage(int page) {
+    if (page < 1 || page > 50) return;
+    _state = _state.copyWith(chartPage: page);
+    notifyListeners();
+  }
+
+  void nextPage() {
+    if (_state.chartPage < 50) {
+      setChartPage(_state.chartPage + 1);
+    }
+  }
+
+  void prevPage() {
+    if (_state.chartPage > 1) {
+      setChartPage(_state.chartPage - 1);
+    }
+  }
+
   void placeBet(String choice, int amount) {
     debugPrint('Placed bet: Choice: $choice, Amount: $amount, Multiplier: ${_state.multiplier}');
     
     final finalAmount = amount.toDouble();
     final newBet = WingoBet(
       periodId: _state.periodId,
+      tabType: _state.activeTab,
       choice: choice,
       amount: finalAmount,
       timestamp: DateTime.now(),
@@ -69,27 +108,6 @@ class WingoViewModel extends ChangeNotifier {
 
     _state = _state.copyWith(myBets: updatedBets);
     notifyListeners();
-  }
-
-  int _getDuration(WingoTabType tab) {
-    switch (tab) {
-      case WingoTabType.seconds30:
-        return 30;
-      case WingoTabType.minute1:
-        return 60;
-      case WingoTabType.minute3:
-        return 180;
-      case WingoTabType.minute5:
-        return 300;
-    }
-  }
-
-  String _generateStartPeriodId(WingoTabType tab) {
-    final now = DateTime.now();
-    final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
-    final typeCode = _getTabTypeCode(tab);
-    final randVal = 100000 + _random.nextInt(900000);
-    return '$dateStr$typeCode$randVal';
   }
 
   String _getTabTypeCode(WingoTabType tab) {
@@ -105,19 +123,8 @@ class WingoViewModel extends ChangeNotifier {
     }
   }
 
-  String _generateNextPeriodId(String current) {
-    try {
-      final base = current.substring(0, current.length - 4);
-      final count = int.parse(current.substring(current.length - 4));
-      final nextCountStr = (count + 1).toString().padLeft(4, '0');
-      return '$base$nextCountStr';
-    } catch (_) {
-      return current;
-    }
-  }
-
   List<DrawResult> _generateInitialHistory() {
-    return List.generate(10, (_) => _generateRandomDrawResult());
+    return List.generate(500, (_) => _generateRandomDrawResult());
   }
 
   DrawResult _generateRandomDrawResult() {
@@ -169,51 +176,177 @@ class WingoViewModel extends ChangeNotifier {
     return amount * 9.0;
   }
 
+  // --- Clock calculations based on System Clock (DateTime.now()) ---
+
+  int _calculateRemainingTime(WingoTabType tab, DateTime now) {
+    switch (tab) {
+      case WingoTabType.seconds30:
+        return 30 - (now.second % 30);
+      case WingoTabType.minute1:
+        return 60 - now.second;
+      case WingoTabType.minute3:
+        final elapsed = (now.minute % 3) * 60 + now.second;
+        return 180 - elapsed;
+      case WingoTabType.minute5:
+        final elapsed = (now.minute % 5) * 60 + now.second;
+        return 300 - elapsed;
+    }
+  }
+
+  String _calculatePeriodId(WingoTabType tab, DateTime now) {
+    final dateStr = '${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}';
+    final typeCode = _getTabTypeCode(tab);
+    
+    int intervalLengthSeconds;
+    switch (tab) {
+      case WingoTabType.seconds30:
+        intervalLengthSeconds = 30;
+        break;
+      case WingoTabType.minute1:
+        intervalLengthSeconds = 60;
+        break;
+      case WingoTabType.minute3:
+        intervalLengthSeconds = 180;
+        break;
+      case WingoTabType.minute5:
+        intervalLengthSeconds = 300;
+        break;
+    }
+    
+    final totalSecondsInDay = now.hour * 3600 + now.minute * 60 + now.second;
+    final periodIndex = totalSecondsInDay ~/ intervalLengthSeconds;
+    final periodIndexStr = periodIndex.toString().padLeft(4, '0');
+    return '$dateStr$typeCode$periodIndexStr';
+  }
+
+  // --- Statistics Calculations (last 100 Periods) ---
+
+  List<int> getMissingStatistics() {
+    final result = List<int>.filled(10, 0);
+    for (int num = 0; num <= 9; num++) {
+      int index = _state.history.indexWhere((element) => element.number == num);
+      result[num] = index == -1 ? _state.history.length : index;
+    }
+    return result;
+  }
+
+  List<int> getAvgMissingStatistics() {
+    final result = List<int>.filled(10, 0);
+    for (int num = 0; num <= 9; num++) {
+      final indices = <int>[];
+      for (int i = 0; i < _state.history.length; i++) {
+        if (_state.history[i].number == num) {
+          indices.add(i);
+        }
+      }
+      if (indices.isEmpty) {
+        result[num] = _state.history.length;
+        continue;
+      }
+      int totalGaps = 0;
+      int prevIndex = -1;
+      for (final idx in indices) {
+        totalGaps += (idx - prevIndex - 1);
+        prevIndex = idx;
+      }
+      totalGaps += (_state.history.length - prevIndex - 1);
+      result[num] = (totalGaps / (indices.length + 1)).round();
+    }
+    return result;
+  }
+
+  List<int> getFrequencyStatistics() {
+    final result = List<int>.filled(10, 0);
+    for (final draw in _state.history) {
+      if (draw.number >= 0 && draw.number <= 9) {
+        result[draw.number]++;
+      }
+    }
+    return result;
+  }
+
+  List<int> getMaxConsecutiveStatistics() {
+    final result = List<int>.filled(10, 0);
+    for (int num = 0; num <= 9; num++) {
+      int maxRun = 0;
+      int currentRun = 0;
+      for (final draw in _state.history) {
+        if (draw.number == num) {
+          currentRun++;
+          if (currentRun > maxRun) {
+            maxRun = currentRun;
+          }
+        } else {
+          currentRun = 0;
+        }
+      }
+      result[num] = maxRun;
+    }
+    return result;
+  }
+
   void _tick() {
-    int nextTime = _state.timeRemaining - 1;
-    if (nextTime <= 0) {
-      final newDraw = _generateRandomDrawResult();
-      final newHistory = List<DrawResult>.from(_state.history);
-      newHistory.insert(0, newDraw);
-      if (newHistory.length > 10) {
-        newHistory.removeLast();
+    final now = DateTime.now();
+
+    final allHistories = Map<WingoTabType, List<DrawResult>>.from(_state.allHistories);
+    final allPeriodIds = Map<WingoTabType, String>.from(_state.allPeriodIds);
+    final allTimeRemaining = Map<WingoTabType, int>.from(_state.allTimeRemaining);
+    final updatedBets = List<WingoBet>.from(_state.myBets);
+
+    for (final tab in WingoTabType.values) {
+      final newPeriodId = _calculatePeriodId(tab, now);
+      final newRemaining = _calculateRemainingTime(tab, now);
+      final oldPeriodId = allPeriodIds[tab];
+
+      if (newPeriodId != oldPeriodId) {
+        final newDraw = _generateRandomDrawResult();
+        final tabHistory = List<DrawResult>.from(allHistories[tab] ?? []);
+        tabHistory.insert(0, newDraw);
+        if (tabHistory.length > 500) {
+          tabHistory.removeLast();
+        }
+        allHistories[tab] = tabHistory;
+
+        final drawnNumber = newDraw.number;
+        for (int i = 0; i < updatedBets.length; i++) {
+          final bet = updatedBets[i];
+          if (bet.tabType == tab && bet.periodId == oldPeriodId && !bet.isResolved) {
+            final won = _evaluateBetWin(bet.choice, drawnNumber);
+            final payout = won ? _calculatePayout(bet.choice, bet.amount, drawnNumber) : 0.0;
+            updatedBets[i] = bet.copyWith(
+              isResolved: true,
+              isWon: won,
+              payout: payout,
+            );
+          }
+        }
+
+        allPeriodIds[tab] = newPeriodId;
       }
 
-      final currentPeriod = _state.periodId;
-      final drawnNumber = newDraw.number;
-
-      // Evaluate and resolve pending bets for the drawn period
-      final updatedBets = _state.myBets.map((bet) {
-        if (bet.periodId == currentPeriod && !bet.isResolved) {
-          final won = _evaluateBetWin(bet.choice, drawnNumber);
-          final payout = won ? _calculatePayout(bet.choice, bet.amount, drawnNumber) : 0.0;
-          return bet.copyWith(
-            isResolved: true,
-            isWon: won,
-            payout: payout,
-          );
-        }
-        return bet;
-      }).toList();
-
-      final nextPeriod = _generateNextPeriodId(_state.periodId);
-      final resetDuration = _getDuration(_state.activeTab);
-
-      _state = _state.copyWith(
-        timeRemaining: resetDuration,
-        periodId: nextPeriod,
-        history: newHistory,
-        myBets: updatedBets,
-      );
-    } else {
-      _state = _state.copyWith(timeRemaining: nextTime);
+      allTimeRemaining[tab] = newRemaining;
     }
+
+    final activeTab = _state.activeTab;
+    _state = _state.copyWith(
+      timeRemaining: allTimeRemaining[activeTab],
+      periodId: allPeriodIds[activeTab],
+      history: allHistories[activeTab],
+      allHistories: allHistories,
+      allPeriodIds: allPeriodIds,
+      allTimeRemaining: allTimeRemaining,
+      myBets: updatedBets,
+    );
     notifyListeners();
+  }
+
+  void stopTimer() {
+    _timer?.cancel();
+    _timer = null;
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
-    super.dispose();
+    // Singleton remains active in background; ignore framework dispose.
   }
 }

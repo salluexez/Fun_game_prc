@@ -9,8 +9,8 @@ class WingoView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<WingoViewModel>(
-      create: (_) => WingoViewModel(),
+    return ChangeNotifierProvider<WingoViewModel>.value(
+      value: WingoViewModel(),
       child: const _WingoContent(),
     );
   }
@@ -693,8 +693,6 @@ class _WingoContent extends StatelessWidget {
           const SizedBox(width: 8),
           _buildHistoryTabButton(viewModel, state, WingoHistoryTab.chart, 'Chart'),
           const SizedBox(width: 8),
-          _buildHistoryTabButton(viewModel, state, WingoHistoryTab.followStrategy, 'Follow Strategy'),
-          const SizedBox(width: 8),
           _buildHistoryTabButton(viewModel, state, WingoHistoryTab.myHistory, 'My history'),
         ],
       ),
@@ -745,9 +743,7 @@ class _WingoContent extends StatelessWidget {
       case WingoHistoryTab.gameHistory:
         return _buildGameHistoryTable(context, viewModel, state);
       case WingoHistoryTab.chart:
-        return _buildPlaceholderTab('Chart data analysis coming soon...');
-      case WingoHistoryTab.followStrategy:
-        return _buildPlaceholderTab('Strategy recommendations coming soon...');
+        return _buildChartContent(context, viewModel, state);
       case WingoHistoryTab.myHistory:
         if (state.myBets.isEmpty) {
           return _buildPlaceholderTab('Your personal bet history is empty.');
@@ -1154,6 +1150,478 @@ class _WingoContent extends StatelessWidget {
     } catch (_) {
       return currentPeriod;
     }
+  }
+
+  // --- Wingo Chart Tab View implementation ---
+
+  Widget _buildChartContent(BuildContext context, WingoViewModel viewModel, WingoState state) {
+    const double periodWidth = 135.0;
+    const double bigSmallWidth = 35.0;
+
+    // Get statistics calculated from WingoViewModel
+    final missing = viewModel.getMissingStatistics();
+    final avgMissing = viewModel.getAvgMissingStatistics();
+    final frequency = viewModel.getFrequencyStatistics();
+    final maxConsecutive = viewModel.getMaxConsecutiveStatistics();
+
+    // Limit display rows to 10 items per page slice
+    final startIndex = (state.chartPage - 1) * 10;
+    final displayedHistory = state.history.skip(startIndex).take(10).toList();
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: [
+            // Header Row
+            Container(
+              color: const Color(0xFFF15147),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: periodWidth,
+                    child: Text(
+                      'Period',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ),
+                  const Expanded(
+                    child: Text(
+                      'Number',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ),
+                  const SizedBox(width: bigSmallWidth),
+                ],
+              ),
+            ),
+
+            // Statistics Section
+            Container(
+              height: 36.0,
+              decoration: const BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Color(0xFFF1F3F9), width: 1),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: periodWidth,
+                    child: Padding(
+                      padding: EdgeInsets.only(left: 12.0),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Statistic',
+                          style: TextStyle(
+                            color: Color(0xFF222222),
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Expanded(
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '(last 100 Periods)',
+                        style: TextStyle(
+                          color: Color(0xFF888888),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: bigSmallWidth),
+                ],
+              ),
+            ),
+            _buildStatRow('Winning Numbers', [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], periodWidth, bigSmallWidth, isWinningNumberRow: true),
+            _buildStatRow('Missing', missing, periodWidth, bigSmallWidth),
+            _buildStatRow('Avg missing', avgMissing, periodWidth, bigSmallWidth),
+            _buildStatRow('Frequency', frequency, periodWidth, bigSmallWidth),
+            _buildStatRow('Max consecutive', maxConsecutive, periodWidth, bigSmallWidth),
+
+            const SizedBox(height: 10),
+
+            // Draws & Trend Path Line Section
+            CustomPaint(
+              painter: WingoTrendLinePainter(
+                history: displayedHistory,
+                rowHeight: 44.0,
+                periodWidth: periodWidth,
+                bigSmallWidth: bigSmallWidth,
+              ),
+              child: Column(
+                children: List.generate(displayedHistory.length, (index) {
+                  final result = displayedHistory[index];
+                  final globalIndex = startIndex + index;
+                  final periodId = _getPeriodIdForIndex(state.periodId, globalIndex);
+                  return _buildChartRow(result, periodId, periodWidth, bigSmallWidth, index);
+                }),
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            // Pagination Controls Bar
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 14.0),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(color: Color(0xFFF1F3F9), width: 1),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: state.chartPage > 1 ? () => viewModel.prevPage() : null,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: state.chartPage > 1 ? const Color(0xFFF7F8FC) : const Color(0xFFFAFAFA),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.chevron_left,
+                        color: state.chartPage > 1 ? const Color(0xFF555555) : const Color(0xFFCCCCCC),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Text(
+                    '${state.chartPage}/50',
+                    style: const TextStyle(
+                      color: Color(0xFF555555),
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  GestureDetector(
+                    onTap: state.chartPage < 50 ? () => viewModel.nextPage() : null,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: state.chartPage < 50 ? const Color(0xFFF15147) : const Color(0xFFFAFAFA),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.chevron_right,
+                        color: state.chartPage < 50 ? Colors.white : const Color(0xFFCCCCCC),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatRow(
+    String label,
+    List<dynamic> values,
+    double periodWidth,
+    double bigSmallWidth, {
+    bool isWinningNumberRow = false,
+    bool isPlainTextOnly = false,
+  }) {
+    return Container(
+      height: 36.0,
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFF1F3F9), width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: periodWidth,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 12.0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: isWinningNumberRow || label == 'Statistic'
+                        ? const Color(0xFF222222)
+                        : const Color(0xFF888888),
+                    fontSize: 12,
+                    fontWeight: isWinningNumberRow || label == 'Statistic'
+                        ? FontWeight.bold
+                        : FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Row(
+              children: List.generate(10, (num) {
+                final val = values[num];
+                Widget childWidget;
+
+                if (isPlainTextOnly) {
+                  childWidget = Text(
+                    '$val',
+                    style: const TextStyle(
+                      color: Color(0xFF888888),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                } else if (isWinningNumberRow) {
+                  childWidget = Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: const Color(0xFFF15147), width: 1.0),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      '$val',
+                      style: const TextStyle(
+                        color: Color(0xFFF15147),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  );
+                } else {
+                  childWidget = Text(
+                    '$val',
+                    style: const TextStyle(
+                      color: Color(0xFF777777),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  );
+                }
+
+                return Expanded(
+                  child: Center(child: childWidget),
+                );
+              }),
+            ),
+          ),
+          SizedBox(width: bigSmallWidth),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartRow(
+    DrawResult result,
+    String periodId,
+    double periodWidth,
+    double bigSmallWidth,
+    int index,
+  ) {
+    return Container(
+      height: 44.0,
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Color(0xFFF1F3F9), width: 1),
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: periodWidth,
+            child: Center(
+              child: Text(
+                periodId,
+                style: const TextStyle(
+                  color: Color(0xFF555555),
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Row(
+              children: List.generate(10, (num) {
+                final isWinning = result.number == num;
+                return Expanded(
+                  child: Center(
+                    child: _buildChartNumberCircle(num, isWinning, result.colors),
+                  ),
+                );
+              }),
+            ),
+          ),
+          SizedBox(
+            width: bigSmallWidth,
+            child: Center(
+              child: _buildBigSmallBadge(result.bigSmall),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChartNumberCircle(int num, bool isWinning, List<Color> colors) {
+    if (!isWinning) {
+      return Container(
+        width: 20,
+        height: 20,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0xFFEBEBEB), width: 1.0),
+        ),
+        alignment: Alignment.center,
+        child: Text(
+          '$num',
+          style: const TextStyle(
+            color: Color(0xFFCCCCCC),
+            fontSize: 10.5,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      );
+    }
+
+    BoxDecoration decor;
+    if (colors.length == 1) {
+      decor = BoxDecoration(
+        shape: BoxShape.circle,
+        color: colors.first,
+      );
+    } else {
+      decor = BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: LinearGradient(
+          colors: colors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          stops: const [0.5, 0.5],
+        ),
+      );
+    }
+
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: decor,
+      alignment: Alignment.center,
+      child: Text(
+        '$num',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10.5,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBigSmallBadge(String bigSmall) {
+    final isBig = bigSmall == 'Big';
+    return Container(
+      width: 18,
+      height: 18,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: isBig ? const Color(0xFFFFA84C) : const Color(0xFF5CA3FF),
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        isBig ? 'B' : 'S',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9.5,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// Trend Line Custom Painter
+// -------------------------------------------------------------
+class WingoTrendLinePainter extends CustomPainter {
+  final List<DrawResult> history;
+  final double rowHeight;
+  final double periodWidth;
+  final double bigSmallWidth;
+
+  WingoTrendLinePainter({
+    required this.history,
+    required this.rowHeight,
+    required this.periodWidth,
+    required this.bigSmallWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (history.length < 2) return;
+
+    final linePaint = Paint()
+      ..color = const Color(0xFFF15147)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+
+    // Calculate gridWidth dynamically from constraints
+    final gridWidth = size.width - periodWidth - bigSmallWidth;
+    final colWidth = gridWidth / 10;
+
+    for (int i = 0; i < history.length; i++) {
+      final winningNumber = history[i].number;
+      final cx = periodWidth + (winningNumber * colWidth) + (colWidth / 2);
+      final cy = (i * rowHeight) + (rowHeight / 2);
+
+      if (i == 0) {
+        path.moveTo(cx, cy);
+      } else {
+        path.lineTo(cx, cy);
+      }
+    }
+
+    canvas.drawPath(path, linePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant WingoTrendLinePainter oldDelegate) {
+    return oldDelegate.history != history ||
+        oldDelegate.rowHeight != rowHeight ||
+        oldDelegate.periodWidth != periodWidth ||
+        oldDelegate.bigSmallWidth != bigSmallWidth;
   }
 }
 

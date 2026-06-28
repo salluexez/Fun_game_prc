@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gaming_app/main.dart';
+import 'package:gaming_app/viewmodels/wingo_viewmodel.dart';
 
 void main() {
   testWidgets('Daman homepage smoke test and Wingo navigation', (WidgetTester tester) async {
@@ -26,5 +27,8 @@ void main() {
     expect(find.text('Green'), findsOneWidget);
     expect(find.text('Violet'), findsOneWidget);
     expect(find.text('Red'), findsOneWidget);
+
+    // Clean up singleton background timer for test framework
+    WingoViewModel().stopTimer();
   });
 }
