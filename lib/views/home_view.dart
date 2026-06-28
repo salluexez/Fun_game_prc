@@ -447,80 +447,68 @@ class HomeView extends StatelessWidget {
   }
 
   Widget _buildRecommendationContent() {
-    // Standard mock cards representing recommendations below the fold
+    final recommendations = viewModel.state.recommendations;
+
     return Padding(
-      padding: const EdgeInsets.only(left: 16.0, right: 16.0, top: 12.0),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 120,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: recommendations.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 0.78,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+        ),
+        itemBuilder: (context, index) {
+          final game = recommendations[index];
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: game.gradientColors,
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.asset(
-                  'assets/images/main_screen_images/popular-8_UUQbeo.png',
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.white,
-                      alignment: Alignment.center,
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.gamepad, color: Color(0xFFF34C43), size: 36),
-                          SizedBox(height: 8),
-                          Text(
-                            'Win Go 1Min',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
                 ),
-              ),
+              ],
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Container(
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(Icons.casino, color: Color(0xFF8B2EFF), size: 36),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   Text(
-                    'Trx Hash 3Min',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                    game.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 6.0, right: 6.0, bottom: 12.0),
+                      child: Image.asset(
+                        game.imagePath,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

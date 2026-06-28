@@ -72,6 +72,28 @@ class HomeViewModel extends ChangeNotifier {
           textAlignment: Alignment.bottomRight,
         ),
       ],
+      recommendations: const [
+        RecommendedGame(
+          title: 'Win Go',
+          imagePath: 'assets/images/main_screen_images/lotterycategory_20240123160120h4kw.png',
+          gradientColors: [Color(0xFFFA6557), Color(0xFFF13D30)],
+        ),
+        RecommendedGame(
+          title: 'K3',
+          imagePath: 'assets/images/main_screen_images/lotterycategory_20240123160129bev8.png',
+          gradientColors: [Color(0xFFFA6557), Color(0xFFF13D30)],
+        ),
+        RecommendedGame(
+          title: '5D',
+          imagePath: 'assets/images/main_screen_images/lotterycategory_20240123160137lok5.png',
+          gradientColors: [Color(0xFFFA6557), Color(0xFFF13D30)],
+        ),
+        RecommendedGame(
+          title: 'Trx Win Go',
+          imagePath: 'assets/images/main_screen_images/lotterycategory_202401231601472sqb.png',
+          gradientColors: [Color(0xFFFA6557), Color(0xFFF13D30)],
+        ),
+      ],
     );
   }
 
