@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../viewmodels/home_viewmodel.dart';
 import '../models/game_model.dart';
+import 'wingo_view.dart';
 
 class HomeView extends StatelessWidget {
   final HomeViewModel viewModel;
@@ -144,7 +145,7 @@ class HomeView extends StatelessWidget {
                 _buildPlatformRecommendationHeader(),
                 
                 // 5. Mock Recommendations (visually completes the screen layout)
-                _buildRecommendationContent(),
+                _buildRecommendationContent(context),
                 
                 const SizedBox(height: 16),
                 
@@ -311,7 +312,7 @@ class HomeView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 4.0),
                   child: AspectRatio(
                     aspectRatio: 1.8,
-                    child: _buildCategoryCard(category),
+                    child: _buildCategoryCard(context, category),
                   ),
                 ),
               );
@@ -331,7 +332,7 @@ class HomeView extends StatelessWidget {
               mainAxisSpacing: 8,
             ),
             itemBuilder: (context, index) {
-              return _buildCategoryCard(mediumCategories[index]);
+              return _buildCategoryCard(context, mediumCategories[index]);
             },
           ),
         ],
@@ -339,9 +340,18 @@ class HomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildCategoryCard(GameCategory category) {
+  Widget _buildCategoryCard(BuildContext context, GameCategory category) {
     return GestureDetector(
-      onTap: () => viewModel.onCategoryPressed(category),
+      onTap: () {
+        if (category.title == 'Lottery') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const WingoView()),
+          );
+        } else {
+          viewModel.onCategoryPressed(category);
+        }
+      },
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -467,7 +477,7 @@ class HomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildRecommendationContent() {
+  Widget _buildRecommendationContent(BuildContext context) {
     final recommendations = viewModel.state.recommendations;
 
     return Padding(
@@ -484,48 +494,56 @@ class HomeView extends StatelessWidget {
         ),
         itemBuilder: (context, index) {
           final game = recommendations[index];
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: game.gradientColors,
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 6,
-                  offset: const Offset(0, 3),
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const WingoView()),
+              );
+            },
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: game.gradientColors,
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 12),
-                  Text(
-                    game.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 6.0, right: 6.0, bottom: 12.0),
-                      child: Image.asset(
-                        game.imagePath,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
-                      ),
-                    ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
                   ),
                 ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const SizedBox(height: 12),
+                    Text(
+                      game.title,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 6.0, right: 6.0, bottom: 12.0),
+                        child: Image.asset(
+                          game.imagePath,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
