@@ -32,6 +32,7 @@ class WingoViewModel extends ChangeNotifier {
       history: initialHistory,
       multiplier: 1,
       activeHistoryTab: WingoHistoryTab.gameHistory,
+      myBets: const [],
     );
   }
 
@@ -54,6 +55,20 @@ class WingoViewModel extends ChangeNotifier {
 
   void placeBet(String choice, int amount) {
     debugPrint('Placed bet: Choice: $choice, Amount: $amount, Multiplier: ${_state.multiplier}');
+    
+    final finalAmount = amount.toDouble();
+    final newBet = WingoBet(
+      periodId: _state.periodId,
+      choice: choice,
+      amount: finalAmount,
+      timestamp: DateTime.now(),
+    );
+
+    final updatedBets = List<WingoBet>.from(_state.myBets);
+    updatedBets.insert(0, newBet);
+
+    _state = _state.copyWith(myBets: updatedBets);
+    notifyListeners();
   }
 
   int _getDuration(WingoTabType tab) {
@@ -126,6 +141,34 @@ class WingoViewModel extends ChangeNotifier {
     return const [Color(0xFF2CA87E)]; // Green
   }
 
+  bool _evaluateBetWin(String choice, int number) {
+    if (choice == 'Big') return number >= 5;
+    if (choice == 'Small') return number <= 4;
+    if (choice == 'Green') return const [1, 3, 5, 7, 9].contains(number);
+    if (choice == 'Red') return const [0, 2, 4, 6, 8].contains(number);
+    if (choice == 'Violet') return const [0, 5].contains(number);
+    
+    // Exact number selection
+    final parsedNumber = int.tryParse(choice);
+    if (parsedNumber != null) {
+      return parsedNumber == number;
+    }
+    return false;
+  }
+
+  double _calculatePayout(String choice, double amount, int number) {
+    if (choice == 'Big' || choice == 'Small') return amount * 2.0;
+    if (choice == 'Violet') return amount * 4.5;
+    if (choice == 'Green' || choice == 'Red') {
+      if (number == 0 || number == 5) {
+        return amount * 1.5; // Split color win multiplier (violet + red/green)
+      }
+      return amount * 2.0;
+    }
+    // Exact number multiplier (9x)
+    return amount * 9.0;
+  }
+
   void _tick() {
     int nextTime = _state.timeRemaining - 1;
     if (nextTime <= 0) {
@@ -136,6 +179,23 @@ class WingoViewModel extends ChangeNotifier {
         newHistory.removeLast();
       }
 
+      final currentPeriod = _state.periodId;
+      final drawnNumber = newDraw.number;
+
+      // Evaluate and resolve pending bets for the drawn period
+      final updatedBets = _state.myBets.map((bet) {
+        if (bet.periodId == currentPeriod && !bet.isResolved) {
+          final won = _evaluateBetWin(bet.choice, drawnNumber);
+          final payout = won ? _calculatePayout(bet.choice, bet.amount, drawnNumber) : 0.0;
+          return bet.copyWith(
+            isResolved: true,
+            isWon: won,
+            payout: payout,
+          );
+        }
+        return bet;
+      }).toList();
+
       final nextPeriod = _generateNextPeriodId(_state.periodId);
       final resetDuration = _getDuration(_state.activeTab);
 
@@ -143,6 +203,7 @@ class WingoViewModel extends ChangeNotifier {
         timeRemaining: resetDuration,
         periodId: nextPeriod,
         history: newHistory,
+        myBets: updatedBets,
       );
     } else {
       _state = _state.copyWith(timeRemaining: nextTime);

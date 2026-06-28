@@ -749,8 +749,210 @@ class _WingoContent extends StatelessWidget {
       case WingoHistoryTab.followStrategy:
         return _buildPlaceholderTab('Strategy recommendations coming soon...');
       case WingoHistoryTab.myHistory:
-        return _buildPlaceholderTab('Your personal bet history is empty.');
+        if (state.myBets.isEmpty) {
+          return _buildPlaceholderTab('Your personal bet history is empty.');
+        }
+        return _buildMyHistoryList(context, viewModel, state);
     }
+  }
+
+  Widget _buildMyHistoryList(BuildContext context, WingoViewModel viewModel, WingoState state) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      itemCount: state.myBets.length,
+      itemBuilder: (context, index) {
+        final bet = state.myBets[index];
+        return _buildMyBetCard(context, viewModel, state, bet);
+      },
+    );
+  }
+
+  Widget _buildMyBetCard(
+    BuildContext context,
+    WingoViewModel viewModel,
+    WingoState state,
+    WingoBet bet,
+  ) {
+    final badgeDecor = _getBadgeDecoration(bet.choice, viewModel);
+
+    Color statusColor;
+    String statusText;
+    Color payoutColor;
+    String payoutText;
+
+    if (!bet.isResolved) {
+      statusColor = Colors.grey;
+      statusText = 'Waiting';
+      payoutColor = const Color(0xFF666666);
+      payoutText = '₹${bet.amount.toStringAsFixed(2)}';
+    } else if (bet.isWon) {
+      statusColor = const Color(0xFF2CA87E);
+      statusText = 'Succeed';
+      payoutColor = const Color(0xFF2CA87E);
+      payoutText = '+₹${bet.payout.toStringAsFixed(2)}';
+    } else {
+      statusColor = const Color(0xFFF34C43);
+      statusText = 'Failed';
+      payoutColor = const Color(0xFFF34C43);
+      payoutText = '-₹${bet.amount.toStringAsFixed(2)}';
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10.0),
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.015),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // Left Badge
+          Container(
+            width: 48,
+            height: 48,
+            decoration: badgeDecor,
+            alignment: Alignment.center,
+            child: Text(
+              bet.choice,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Center Info
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      bet.periodId,
+                      style: const TextStyle(
+                        color: Color(0xFF222222),
+                        fontSize: 14.5,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    const Icon(
+                      Icons.arrow_drop_down,
+                      size: 16,
+                      color: Color(0xFF666666),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatDateTime(bet.timestamp),
+                  style: const TextStyle(
+                    color: Color(0xFF888888),
+                    fontSize: 11.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Right Status & Amount
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  border: Border.all(color: statusColor, width: 1.0),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  statusText,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                payoutText,
+                style: TextStyle(
+                  color: payoutColor,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  BoxDecoration _getBadgeDecoration(String choice, WingoViewModel viewModel) {
+    final number = int.tryParse(choice);
+    if (number != null) {
+      final colors = viewModel.getColorsForNumber(number);
+      if (colors.length == 1) {
+        return BoxDecoration(
+          color: colors.first,
+          borderRadius: BorderRadius.circular(10),
+        );
+      } else {
+        return BoxDecoration(
+          gradient: LinearGradient(
+            colors: colors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            stops: const [0.5, 0.5],
+          ),
+          borderRadius: BorderRadius.circular(10),
+        );
+      }
+    }
+
+    Color badgeColor;
+    if (choice == 'Big') {
+      badgeColor = const Color(0xFFFFA84C);
+    } else if (choice == 'Small') {
+      badgeColor = const Color(0xFF5CA3FF);
+    } else if (choice == 'Green') {
+      badgeColor = const Color(0xFF2CA87E);
+    } else if (choice == 'Red') {
+      badgeColor = const Color(0xFFF34C43);
+    } else if (choice == 'Violet') {
+      badgeColor = const Color(0xFF9E5CFF);
+    } else {
+      badgeColor = Colors.grey;
+    }
+
+    return BoxDecoration(
+      color: badgeColor,
+      borderRadius: BorderRadius.circular(10),
+    );
+  }
+
+  String _formatDateTime(DateTime dt) {
+    final year = dt.year;
+    final month = dt.month.toString().padLeft(2, '0');
+    final day = dt.day.toString().padLeft(2, '0');
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final second = dt.second.toString().padLeft(2, '0');
+    return '$year-$month-$day $hour:$minute:$second';
   }
 
   Widget _buildPlaceholderTab(String text) {
@@ -972,12 +1174,18 @@ class _BetConfirmPanel extends StatefulWidget {
 }
 
 class _BetConfirmPanelState extends State<_BetConfirmPanel> {
-  int _quantity = 1;
+  late int _quantity;
   int _betAmount = 10; // Default base amount
 
   @override
+  void initState() {
+    super.initState();
+    _quantity = widget.viewModel.state.multiplier;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final finalAmount = _betAmount * _quantity * widget.viewModel.state.multiplier;
+    final finalAmount = _betAmount * _quantity;
 
     return Padding(
       padding: const EdgeInsets.all(20.0),
