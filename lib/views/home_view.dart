@@ -36,7 +36,7 @@ class HomeView extends StatelessWidget {
                     builder: (context, _) {
                       return Image.asset(
                         viewModel.state.logoImagePath,
-                        height: 38,
+                        height: 26,
                         fit: BoxFit.contain,
                         errorBuilder: (context, error, stackTrace) {
                           // Fallback in case asset loading fails
@@ -44,7 +44,7 @@ class HomeView extends StatelessWidget {
                             'Daman',
                             style: TextStyle(
                               color: Color(0xFFF34C43),
-                              fontSize: 24,
+                              fontSize: 20,
                               fontWeight: FontWeight.bold,
                               letterSpacing: 1,
                             ),
@@ -323,55 +323,65 @@ class HomeView extends StatelessWidget {
       onTap: () => viewModel.onCategoryPressed(category),
       child: Container(
         decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: category.gradientColors,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
+              color: Colors.black.withOpacity(0.12),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
-          child: Image.asset(
-            category.imagePath,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              // Detailed visual fallback in case images fail to load
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: category.gradientColors,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+          child: Stack(
+            children: [
+              // Cleanly sized category image aligned center-left
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 8.0, top: 6.0, bottom: 6.0),
+                  child: FractionallySizedBox(
+                    heightFactor: category.isLarge ? 0.88 : 0.80,
+                    child: Image.asset(
+                      category.imagePath,
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const SizedBox.shrink();
+                      },
+                    ),
                   ),
                 ),
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      category.title,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                      ),
+              ),
+              // Aligned text title overlay
+              Align(
+                alignment: category.textAlignment,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+                  child: Text(
+                    category.title,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: category.isLarge ? 15.5 : 12.5,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.5,
+                      shadows: [
+                        Shadow(
+                          color: Colors.black.withOpacity(0.25),
+                          offset: const Offset(0, 1),
+                          blurRadius: 2.5,
+                        ),
+                      ],
                     ),
-                    const Align(
-                      alignment: Alignment.bottomRight,
-                      child: Icon(
-                        Icons.play_circle_fill,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                    )
-                  ],
+                  ),
                 ),
-              );
-            },
+              ),
+            ],
           ),
         ),
       ),
@@ -446,7 +456,6 @@ class HomeView extends StatelessWidget {
             child: Container(
               height: 120,
               decoration: BoxDecoration(
-                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: const [
                   BoxShadow(
@@ -456,17 +465,29 @@ class HomeView extends StatelessWidget {
                   ),
                 ],
               ),
-              alignment: Alignment.center,
-              child: const Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.gamepad, color: Color(0xFFF34C43), size: 36),
-                  SizedBox(height: 8),
-                  Text(
-                    'Win Go 1Min',
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                  ),
-                ],
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.asset(
+                  'assets/images/main_screen_images/popular-8_UUQbeo.png',
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      color: Colors.white,
+                      alignment: Alignment.center,
+                      child: const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.gamepad, color: Color(0xFFF34C43), size: 36),
+                          SizedBox(height: 8),
+                          Text(
+                            'Win Go 1Min',
+                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),

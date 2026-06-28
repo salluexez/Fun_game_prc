@@ -5,12 +5,14 @@ class GameCategory {
   final String imagePath;
   final bool isLarge;
   final List<Color> gradientColors;
+  final Alignment textAlignment;
 
   const GameCategory({
     required this.title,
     required this.imagePath,
     this.isLarge = false,
     required this.gradientColors,
+    this.textAlignment = Alignment.bottomRight,
   });
 }
 
