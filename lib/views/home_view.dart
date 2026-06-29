@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../viewmodels/home_viewmodel.dart';
 import '../models/game_model.dart';
 import 'wingo_view.dart';
+import 'k3_view.dart';
 
 class HomeView extends StatelessWidget {
   final HomeViewModel viewModel;
@@ -496,10 +497,17 @@ class HomeView extends StatelessWidget {
           final game = recommendations[index];
           return GestureDetector(
             onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const WingoView()),
-              );
+              if (game.title.toLowerCase().contains('k3')) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const K3View()),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const WingoView()),
+                );
+              }
             },
             child: Container(
               decoration: BoxDecoration(
