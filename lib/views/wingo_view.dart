@@ -16,13 +16,150 @@ class WingoView extends StatelessWidget {
   }
 }
 
-class _WingoContent extends StatelessWidget {
+class _WingoContent extends StatefulWidget {
   const _WingoContent();
+
+  @override
+  State<_WingoContent> createState() => _WingoContentState();
+}
+
+class _WingoContentState extends State<_WingoContent> {
+  void _showResolutionDialog(BuildContext context, WingoResolutionResult result) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        final isWin = result.isWon;
+
+        // Auto-dismiss dialog after 3 seconds
+        Future.delayed(const Duration(seconds: 3), () {
+          if (dialogContext.mounted) {
+            Navigator.pop(dialogContext);
+          }
+        });
+
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.all(24.0),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20.0),
+              gradient: isWin
+                  ? const LinearGradient(
+                      colors: [Color(0xFFF15147), Color(0xFFFFA84C)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : const LinearGradient(
+                      colors: [Color(0xFF3A3D4D), Color(0xFF5E627A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white,
+                  ),
+                  child: Icon(
+                    isWin ? Icons.emoji_events : Icons.mood_bad,
+                    color: isWin ? const Color(0xFFFFA84C) : const Color(0xFF5E627A),
+                    size: 48,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  isWin ? 'Congratulations!' : 'Sorry!',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  isWin ? 'You win with amount:' : 'You lose your money:',
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  isWin
+                      ? '+₹${result.totalPayout.toStringAsFixed(2)}'
+                      : '-₹${result.totalBetAmount.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    color: isWin ? const Color(0xFF2FFE9D) : const Color(0xFFFF6D6D),
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Period ID: ${result.periodId}',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.5),
+                    fontSize: 11,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: isWin ? const Color(0xFFF15147) : const Color(0xFF3A3D4D),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => Navigator.pop(dialogContext),
+                    child: Text(
+                      isWin ? 'Close' : 'Try Again',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<WingoViewModel>(context);
     final state = viewModel.state;
+
+    if (state.lastResolution != null) {
+      final res = state.lastResolution!;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showResolutionDialog(context, res);
+        viewModel.clearResolution();
+      });
+    }
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
@@ -975,6 +1112,9 @@ class _WingoContent extends StatelessWidget {
   }
 
   Widget _buildGameHistoryTable(BuildContext context, WingoViewModel viewModel, WingoState state) {
+    final startIndex = (state.gameHistoryPage - 1) * 10;
+    final displayedHistory = state.history.skip(startIndex).take(10).toList();
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16.0),
       decoration: BoxDecoration(
@@ -1038,14 +1178,15 @@ class _WingoContent extends StatelessWidget {
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: state.history.length,
+              itemCount: displayedHistory.length,
               separatorBuilder: (context, index) => const Divider(
                 color: Color(0xFFF1F3F9),
                 height: 1,
                 thickness: 1,
               ),
               itemBuilder: (context, index) {
-                final result = state.history[index];
+                final result = displayedHistory[index];
+                final globalIndex = startIndex + index;
                 return Padding(
                   padding: const EdgeInsets.symmetric(vertical: 12.0),
                   child: Row(
@@ -1053,7 +1194,7 @@ class _WingoContent extends StatelessWidget {
                       Expanded(
                         flex: 4,
                         child: Text(
-                          _getPeriodIdForIndex(state.periodId, index),
+                          _getPeriodIdForIndex(state.periodId, globalIndex),
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             color: Color(0xFF555555),
@@ -1102,6 +1243,66 @@ class _WingoContent extends StatelessWidget {
                   ),
                 );
               },
+            ),
+
+            const SizedBox(height: 10),
+
+            // Pagination Controls Bar (matches Chart tab)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 14.0),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                border: Border(
+                  top: BorderSide(color: Color(0xFFF1F3F9), width: 1),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  GestureDetector(
+                    onTap: state.gameHistoryPage > 1 ? () => viewModel.prevGameHistoryPage() : null,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: state.gameHistoryPage > 1 ? const Color(0xFFF7F8FC) : const Color(0xFFFAFAFA),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.chevron_left,
+                        color: state.gameHistoryPage > 1 ? const Color(0xFF555555) : const Color(0xFFCCCCCC),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Text(
+                    '${state.gameHistoryPage}/50',
+                    style: const TextStyle(
+                      color: Color(0xFF555555),
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  GestureDetector(
+                    onTap: state.gameHistoryPage < 50 ? () => viewModel.nextGameHistoryPage() : null,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: state.gameHistoryPage < 50 ? const Color(0xFFF15147) : const Color(0xFFFAFAFA),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.chevron_right,
+                        color: state.gameHistoryPage < 50 ? Colors.white : const Color(0xFFCCCCCC),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),

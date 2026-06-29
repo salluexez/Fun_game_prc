@@ -69,6 +69,20 @@ class WingoBet {
   }
 }
 
+class WingoResolutionResult {
+  final String periodId;
+  final bool isWon;
+  final double totalPayout;
+  final double totalBetAmount;
+
+  const WingoResolutionResult({
+    required this.periodId,
+    required this.isWon,
+    required this.totalPayout,
+    required this.totalBetAmount,
+  });
+}
+
 class WingoState {
   final WingoTabType activeTab;
   final int timeRemaining;
@@ -78,11 +92,15 @@ class WingoState {
   final WingoHistoryTab activeHistoryTab;
   final List<WingoBet> myBets;
   final int chartPage;
+  final int gameHistoryPage;
   
   // Parallel background tracking fields
   final Map<WingoTabType, List<DrawResult>> allHistories;
   final Map<WingoTabType, String> allPeriodIds;
   final Map<WingoTabType, int> allTimeRemaining;
+
+  // New win/loss resolution feedback
+  final WingoResolutionResult? lastResolution;
 
   const WingoState({
     required this.activeTab,
@@ -93,9 +111,11 @@ class WingoState {
     required this.activeHistoryTab,
     required this.myBets,
     required this.chartPage,
+    required this.gameHistoryPage,
     required this.allHistories,
     required this.allPeriodIds,
     required this.allTimeRemaining,
+    this.lastResolution,
   });
 
   WingoState copyWith({
@@ -107,9 +127,12 @@ class WingoState {
     WingoHistoryTab? activeHistoryTab,
     List<WingoBet>? myBets,
     int? chartPage,
+    int? gameHistoryPage,
     Map<WingoTabType, List<DrawResult>>? allHistories,
     Map<WingoTabType, String>? allPeriodIds,
     Map<WingoTabType, int>? allTimeRemaining,
+    WingoResolutionResult? lastResolution,
+    bool clearLastResolution = false,
   }) {
     // Defensive check: if hot reload left properties uninitialized/null in memory
     WingoHistoryTab fallbackHistoryTab = WingoHistoryTab.gameHistory;
@@ -133,6 +156,14 @@ class WingoState {
       final dynamic currentPage = this.chartPage;
       if (currentPage != null) {
         fallbackChartPage = currentPage as int;
+      }
+    } catch (_) {}
+
+    int fallbackGameHistoryPage = 1;
+    try {
+      final dynamic currentPage = this.gameHistoryPage;
+      if (currentPage != null) {
+        fallbackGameHistoryPage = currentPage as int;
       }
     } catch (_) {}
 
@@ -169,9 +200,11 @@ class WingoState {
       activeHistoryTab: activeHistoryTab ?? fallbackHistoryTab,
       myBets: myBets ?? fallbackBets,
       chartPage: chartPage ?? fallbackChartPage,
+      gameHistoryPage: gameHistoryPage ?? fallbackGameHistoryPage,
       allHistories: allHistories ?? fallbackAllHistories,
       allPeriodIds: allPeriodIds ?? fallbackAllPeriodIds,
       allTimeRemaining: allTimeRemaining ?? fallbackAllTimeRemaining,
+      lastResolution: clearLastResolution ? null : (lastResolution ?? this.lastResolution),
     );
   }
 }

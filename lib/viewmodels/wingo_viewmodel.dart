@@ -44,9 +44,11 @@ class WingoViewModel extends ChangeNotifier {
       activeHistoryTab: WingoHistoryTab.gameHistory,
       myBets: const [],
       chartPage: 1,
+      gameHistoryPage: 1,
       allHistories: allHistories,
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
+      lastResolution: null,
     );
   }
 
@@ -58,6 +60,7 @@ class WingoViewModel extends ChangeNotifier {
       periodId: _state.allPeriodIds[tab]!,
       history: _state.allHistories[tab]!,
       chartPage: 1,
+      gameHistoryPage: 1,
     );
     notifyListeners();
   }
@@ -89,6 +92,29 @@ class WingoViewModel extends ChangeNotifier {
     if (_state.chartPage > 1) {
       setChartPage(_state.chartPage - 1);
     }
+  }
+
+  void setGameHistoryPage(int page) {
+    if (page < 1 || page > 50) return;
+    _state = _state.copyWith(gameHistoryPage: page);
+    notifyListeners();
+  }
+
+  void nextGameHistoryPage() {
+    if (_state.gameHistoryPage < 50) {
+      setGameHistoryPage(_state.gameHistoryPage + 1);
+    }
+  }
+
+  void prevGameHistoryPage() {
+    if (_state.gameHistoryPage > 1) {
+      setGameHistoryPage(_state.gameHistoryPage - 1);
+    }
+  }
+
+  void clearResolution() {
+    _state = _state.copyWith(clearLastResolution: true);
+    notifyListeners();
   }
 
   void placeBet(String choice, int amount) {
@@ -292,6 +318,9 @@ class WingoViewModel extends ChangeNotifier {
     final allPeriodIds = Map<WingoTabType, String>.from(_state.allPeriodIds);
     final allTimeRemaining = Map<WingoTabType, int>.from(_state.allTimeRemaining);
     final updatedBets = List<WingoBet>.from(_state.myBets);
+    WingoResolutionResult? activeTabResolution;
+
+    final activeTab = _state.activeTab;
 
     for (final tab in WingoTabType.values) {
       final newPeriodId = _calculatePeriodId(tab, now);
@@ -308,11 +337,20 @@ class WingoViewModel extends ChangeNotifier {
         allHistories[tab] = tabHistory;
 
         final drawnNumber = newDraw.number;
+        double tabTotalBet = 0.0;
+        double tabTotalPayout = 0.0;
+        bool hasBets = false;
+
         for (int i = 0; i < updatedBets.length; i++) {
           final bet = updatedBets[i];
           if (bet.tabType == tab && bet.periodId == oldPeriodId && !bet.isResolved) {
+            hasBets = true;
             final won = _evaluateBetWin(bet.choice, drawnNumber);
             final payout = won ? _calculatePayout(bet.choice, bet.amount, drawnNumber) : 0.0;
+            
+            tabTotalBet += bet.amount;
+            tabTotalPayout += payout;
+
             updatedBets[i] = bet.copyWith(
               isResolved: true,
               isWon: won,
@@ -321,13 +359,21 @@ class WingoViewModel extends ChangeNotifier {
           }
         }
 
+        if (hasBets && tab == activeTab) {
+          activeTabResolution = WingoResolutionResult(
+            periodId: oldPeriodId ?? '',
+            isWon: tabTotalPayout > 0,
+            totalPayout: tabTotalPayout,
+            totalBetAmount: tabTotalBet,
+          );
+        }
+
         allPeriodIds[tab] = newPeriodId;
       }
 
       allTimeRemaining[tab] = newRemaining;
     }
 
-    final activeTab = _state.activeTab;
     _state = _state.copyWith(
       timeRemaining: allTimeRemaining[activeTab],
       periodId: allPeriodIds[activeTab],
@@ -336,6 +382,7 @@ class WingoViewModel extends ChangeNotifier {
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
       myBets: updatedBets,
+      lastResolution: activeTabResolution,
     );
     notifyListeners();
   }
