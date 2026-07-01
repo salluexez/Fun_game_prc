@@ -1379,17 +1379,12 @@ class _K3ContentState extends State<_K3Content> {
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                   ),
-                  Expanded(
-                    child: Row(
-                      children: List.generate(16, (index) {
-                        return const Expanded(
-                          child: Text(
-                            'Sum',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10),
-                          ),
-                        );
-                      }),
+                  const Expanded(
+                    child: Center(
+                      child: Text(
+                        'Sum',
+                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
                     ),
                   ),
                   const SizedBox(width: rightWidth),
@@ -1397,20 +1392,28 @@ class _K3ContentState extends State<_K3Content> {
               ),
             ),
 
-            _buildStatRow('Statistic', ['(3-18', 'sums)', '', '', '', '', '', '', '', '', '', '', '', '', '', ''], periodWidth, rightWidth, isPlainTextOnly: true),
+            _buildStatRow('Statistic', ['(last 100 Periods)'], periodWidth, rightWidth, isStatisticRow: true),
             _buildStatRow('Winning Sums', [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18], periodWidth, rightWidth, isWinningNumberRow: true),
             _buildStatRow('Missing', missing, periodWidth, rightWidth),
             _buildStatRow('Frequency', frequency, periodWidth, rightWidth),
 
             const SizedBox(height: 10),
 
-            Column(
-              children: List.generate(displayedHistory.length, (index) {
-                final result = displayedHistory[index];
-                final globalIndex = startIndex + index;
-                final periodId = _getPeriodIdForIndex(state.periodId, globalIndex);
-                return _buildChartRow(result, periodId, periodWidth, rightWidth, index);
-              }),
+            CustomPaint(
+              painter: K3TrendLinePainter(
+                history: displayedHistory,
+                rowHeight: 44.0,
+                periodWidth: periodWidth,
+                rightWidth: rightWidth,
+              ),
+              child: Column(
+                children: List.generate(displayedHistory.length, (index) {
+                  final result = displayedHistory[index];
+                  final globalIndex = startIndex + index;
+                  final periodId = _getPeriodIdForIndex(state.periodId, globalIndex);
+                  return _buildChartRow(result, periodId, periodWidth, rightWidth, index);
+                }),
+              ),
             ),
 
             const SizedBox(height: 10),
@@ -1477,7 +1480,7 @@ class _K3ContentState extends State<_K3Content> {
     double periodWidth,
     double rightWidth, {
     bool isWinningNumberRow = false,
-    bool isPlainTextOnly = false,
+    bool isStatisticRow = false,
   }) {
     return Container(
       height: 36.0,
@@ -1504,33 +1507,44 @@ class _K3ContentState extends State<_K3Content> {
             ),
           ),
           Expanded(
-            child: Row(
-              children: List.generate(16, (idx) {
-                final val = values[idx];
-                Widget childWidget;
+            child: isStatisticRow
+                ? Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      values.first as String,
+                      style: const TextStyle(
+                        color: Color(0xFF888888),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  )
+                : Row(
+                    children: List.generate(16, (idx) {
+                      final val = values[idx];
+                      Widget childWidget;
 
-                if (isPlainTextOnly) {
-                  childWidget = Text(
-                    '$val',
-                    style: const TextStyle(color: Color(0xFF888888), fontSize: 9.5, fontWeight: FontWeight.w500),
-                  );
-                } else if (isWinningNumberRow) {
-                  childWidget = Text(
-                    '$val',
-                    style: const TextStyle(color: Color(0xFFF15147), fontSize: 10, fontWeight: FontWeight.bold),
-                  );
-                } else {
-                  childWidget = Text(
-                    '$val',
-                    style: const TextStyle(color: Color(0xFF777777), fontSize: 10, fontWeight: FontWeight.w500),
-                  );
-                }
+                      if (isWinningNumberRow) {
+                        childWidget = Text(
+                          '$val',
+                          maxLines: 1,
+                          softWrap: false,
+                          style: const TextStyle(color: Color(0xFFF15147), fontSize: 9.0, fontWeight: FontWeight.bold),
+                        );
+                      } else {
+                        childWidget = Text(
+                          '$val',
+                          maxLines: 1,
+                          softWrap: false,
+                          style: const TextStyle(color: Color(0xFF777777), fontSize: 8.0, fontWeight: FontWeight.w500),
+                        );
+                      }
 
-                return Expanded(
-                  child: Center(child: childWidget),
-                );
-              }),
-            ),
+                      return Expanded(
+                        child: Center(child: childWidget),
+                      );
+                    }),
+                  ),
           ),
           SizedBox(width: rightWidth),
         ],
@@ -1888,5 +1902,59 @@ class _BetConfirmPanelState extends State<_BetConfirmPanel> {
         ],
       ),
     );
+  }
+}
+
+class K3TrendLinePainter extends CustomPainter {
+  final List<K3DrawResult> history;
+  final double rowHeight;
+  final double periodWidth;
+  final double rightWidth;
+
+  K3TrendLinePainter({
+    required this.history,
+    required this.rowHeight,
+    required this.periodWidth,
+    required this.rightWidth,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (history.length < 2) return;
+
+    final linePaint = Paint()
+      ..color = const Color(0xFFF15147)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final path = Path();
+
+    // Calculate gridWidth dynamically from constraints
+    final gridWidth = size.width - periodWidth - rightWidth;
+    final colWidth = gridWidth / 16;
+
+    for (int i = 0; i < history.length; i++) {
+      final winningSum = history[i].sum;
+      final idx = winningSum - 3;
+      final cx = periodWidth + (idx * colWidth) + (colWidth / 2);
+      final cy = (i * rowHeight) + (rowHeight / 2);
+
+      if (i == 0) {
+        path.moveTo(cx, cy);
+      } else {
+        path.lineTo(cx, cy);
+      }
+    }
+
+    canvas.drawPath(path, linePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant K3TrendLinePainter oldDelegate) {
+    return oldDelegate.history != history ||
+        oldDelegate.rowHeight != rowHeight ||
+        oldDelegate.periodWidth != periodWidth ||
+        oldDelegate.rightWidth != rightWidth;
   }
 }
