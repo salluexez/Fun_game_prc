@@ -1648,6 +1648,39 @@ class _K3ContentState extends State<_K3Content> {
     String cleanChoice = bet.choice;
     if (bet.choice.startsWith('sum_')) {
       cleanChoice = 'Sum ${bet.choice.substring(4)}';
+    } else if (bet.choice.startsWith('two_matching_')) {
+      cleanChoice = '2 Matching: ${bet.choice.substring(13)}';
+    } else if (bet.choice.startsWith('pair_unique_')) {
+      final parts = bet.choice.substring(12).split('_');
+      cleanChoice = 'Pair: ${parts[0]} & ${parts[1]}';
+    } else if (bet.choice.startsWith('three_matching_')) {
+      cleanChoice = '3 Matching: ${bet.choice.substring(15)}';
+    } else if (bet.choice == 'any_three_same') {
+      cleanChoice = 'Any 3 Same';
+    } else if (bet.choice == 'three_continuous') {
+      cleanChoice = '3 Continuous';
+    } else if (bet.choice.startsWith('diff_3_')) {
+      final parts = bet.choice.substring(7).split('_');
+      cleanChoice = '3 Diff: ${parts.join(',')}';
+    } else if (bet.choice.startsWith('diff_2_')) {
+      final parts = bet.choice.substring(7).split('_');
+      cleanChoice = '2 Diff: ${parts.join(',')}';
+    }
+
+    // Try to find the draw result rolled for this bet's period
+    K3DrawResult? drawResult;
+    if (isResolved) {
+      try {
+        final state = viewModel.state;
+        final currentPeriod = state.allPeriodIds[bet.tabType] ?? state.periodId;
+        final currentCount = int.parse(currentPeriod.substring(currentPeriod.length - 4));
+        final betCount = int.parse(bet.periodId.substring(bet.periodId.length - 4));
+        final index = currentCount - betCount - 1;
+        final tabHistory = state.allHistories[bet.tabType] ?? state.history;
+        if (index >= 0 && index < tabHistory.length) {
+          drawResult = tabHistory[index];
+        }
+      } catch (_) {}
     }
 
     final String formattedDate = '${bet.timestamp.year}-${bet.timestamp.month.toString().padLeft(2, '0')}-${bet.timestamp.day.toString().padLeft(2, '0')} ${bet.timestamp.hour.toString().padLeft(2, '0')}:${bet.timestamp.minute.toString().padLeft(2, '0')}:${bet.timestamp.second.toString().padLeft(2, '0')}';
@@ -1693,6 +1726,37 @@ class _K3ContentState extends State<_K3Content> {
                 formattedDate,
                 style: const TextStyle(color: Color(0xFF888888), fontSize: 11),
               ),
+              if (drawResult != null) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    const Text(
+                      'Result: ',
+                      style: TextStyle(color: Color(0xFF888888), fontSize: 11),
+                    ),
+                    Text(
+                      '${drawResult.sum} ',
+                      style: const TextStyle(color: Color(0xFFF34C43), fontSize: 11, fontWeight: FontWeight.bold),
+                    ),
+                    ...drawResult.dice.map((d) {
+                      return Container(
+                        margin: const EdgeInsets.only(left: 4),
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF15147),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '$d',
+                          style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ],
             ],
           ),
           Column(

@@ -35,6 +35,56 @@ class K3ViewModel extends ChangeNotifier {
       allTimeRemaining[tab] = _calculateRemainingTime(tab, now);
     }
 
+    final List<K3Bet> mockBets = [];
+    final basePeriodId = allPeriodIds[activeTab]!;
+    try {
+      final base = basePeriodId.substring(0, basePeriodId.length - 4);
+      final count = int.parse(basePeriodId.substring(basePeriodId.length - 4));
+      final tabHistory = allHistories[activeTab]!;
+      
+      final p1Str = '$base${(count - 1).toString().padLeft(4, '0')}';
+      final draw1 = tabHistory[0];
+      final won1 = draw1.sum == 10;
+      mockBets.add(K3Bet(
+        periodId: p1Str,
+        tabType: activeTab,
+        choice: 'sum_10',
+        amount: 100.0,
+        timestamp: now.subtract(const Duration(minutes: 1)),
+        isResolved: true,
+        isWon: won1,
+        payout: won1 ? 100.0 * 7.68 : 0.0,
+      ));
+
+      final p2Str = '$base${(count - 2).toString().padLeft(4, '0')}';
+      final draw2 = tabHistory[1];
+      final won2 = draw2.sum >= 11;
+      mockBets.add(K3Bet(
+        periodId: p2Str,
+        tabType: activeTab,
+        choice: 'Big',
+        amount: 50.0,
+        timestamp: now.subtract(const Duration(minutes: 2)),
+        isResolved: true,
+        isWon: won2,
+        payout: won2 ? 50.0 * 2.0 : 0.0,
+      ));
+
+      final p3Str = '$base${(count - 3).toString().padLeft(4, '0')}';
+      final draw3 = tabHistory[2];
+      final won3 = draw3.sum % 2 != 0;
+      mockBets.add(K3Bet(
+        periodId: p3Str,
+        tabType: activeTab,
+        choice: 'Odd',
+        amount: 200.0,
+        timestamp: now.subtract(const Duration(minutes: 3)),
+        isResolved: true,
+        isWon: won3,
+        payout: won3 ? 200.0 * 2.0 : 0.0,
+      ));
+    } catch (_) {}
+
     _state = K3State(
       activeTab: activeTab,
       timeRemaining: allTimeRemaining[activeTab]!,
@@ -43,7 +93,7 @@ class K3ViewModel extends ChangeNotifier {
       multiplier: 1,
       activeHistoryTab: K3HistoryTab.gameHistory,
       activeBetTab: K3BetTab.total,
-      myBets: const [],
+      myBets: mockBets,
       chartPage: 1,
       gameHistoryPage: 1,
       allHistories: allHistories,
