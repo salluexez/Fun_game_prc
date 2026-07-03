@@ -4,6 +4,7 @@ import '../models/game_model.dart';
 import 'wingo_view.dart';
 import 'k3_view.dart';
 import 'five_d_view.dart';
+import 'trx_wingo_view.dart';
 
 class HomeView extends StatelessWidget {
   final HomeViewModel viewModel;
@@ -507,6 +508,11 @@ class HomeView extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const FiveDView()),
+                );
+              } else if (game.title.toLowerCase().contains('trx')) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TrxWingoView()),
                 );
               } else {
                 Navigator.push(
