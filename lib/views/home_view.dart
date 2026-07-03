@@ -3,6 +3,7 @@ import '../viewmodels/home_viewmodel.dart';
 import '../models/game_model.dart';
 import 'wingo_view.dart';
 import 'k3_view.dart';
+import 'five_d_view.dart';
 
 class HomeView extends StatelessWidget {
   final HomeViewModel viewModel;
@@ -501,6 +502,11 @@ class HomeView extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const K3View()),
+                );
+              } else if (game.title.toLowerCase().contains('5d')) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const FiveDView()),
                 );
               } else {
                 Navigator.push(
