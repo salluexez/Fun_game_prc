@@ -197,13 +197,28 @@ class _K3ContentState extends State<_K3Content> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            // 1. Announcement Banner
-            _buildAnnouncementBar(context),
-
-            const SizedBox(height: 12),
-
-            // 2. Game Tabs (1 Min, 3 Min, etc.)
-            _buildGameTabs(context, viewModel, state),
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFF34C43), Color(0xFFF8736B)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(32),
+                  bottomRight: Radius.circular(32),
+                ),
+              ),
+              child: Column(
+                children: [
+                  _buildWalletCard(context, viewModel, state),
+                  _buildAnnouncementBar(context),
+                  const SizedBox(height: 16),
+                  _buildGameTabs(context, viewModel, state),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
 
             const SizedBox(height: 16),
 
@@ -239,7 +254,11 @@ class _K3ContentState extends State<_K3Content> {
 
   Widget _buildAnnouncementBar(BuildContext context) {
     return Container(
-      color: Colors.white,
+      margin: const EdgeInsets.symmetric(horizontal: 16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30),
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
         children: [
@@ -275,6 +294,236 @@ class _K3ContentState extends State<_K3Content> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWalletCard(BuildContext context, K3ViewModel viewModel, K3State state) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
+      padding: const EdgeInsets.all(16.0),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '₹${state.balance.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF222222),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  // Silent mock refresh action
+                },
+                child: const Icon(Icons.refresh, color: Color(0xFF888888), size: 20),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.account_balance_wallet, color: Color(0xFFF15147), size: 16),
+              SizedBox(width: 6),
+              Text(
+                'Wallet balance',
+                style: TextStyle(
+                  color: Color(0xFF888888),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF15147),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    _showMockWithdrawDialog(context, viewModel);
+                  },
+                  child: const Text(
+                    'Withdraw',
+                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2CA87E),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    elevation: 0,
+                  ),
+                  onPressed: () {
+                    _showMockDepositDialog(context, viewModel);
+                  },
+                  child: const Text(
+                    'Deposit',
+                    style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMockWithdrawDialog(BuildContext context, K3ViewModel viewModel) {
+    final controller = TextEditingController(text: '10.00');
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+          title: const Row(
+            children: [
+              Icon(Icons.account_balance_wallet, color: Color(0xFFF15147)),
+              SizedBox(width: 8),
+              Text('Withdraw Funds', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Enter amount to withdraw (Dummy Money):', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  prefixText: '₹',
+                  border: OutlineInputBorder(),
+                  focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFFF15147))),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Color(0xFF888888))),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFF15147),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                final amount = double.tryParse(controller.text) ?? 0.0;
+                if (amount <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid amount')),
+                  );
+                  return;
+                }
+                final success = viewModel.withdraw(amount);
+                Navigator.pop(context);
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Successfully withdrew ₹${amount.toStringAsFixed(2)}!')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Insufficient balance for withdrawal!')),
+                  );
+                }
+              },
+              child: const Text('Withdraw', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showMockDepositDialog(BuildContext context, K3ViewModel viewModel) {
+    final controller = TextEditingController(text: '100.00');
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+          title: const Row(
+            children: [
+              Icon(Icons.add_circle, color: Color(0xFF2CA87E)),
+              SizedBox(width: 8),
+              Text('Deposit Funds', style: TextStyle(fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Enter amount to deposit (Dummy Money):', style: TextStyle(color: Color(0xFF888888), fontSize: 13)),
+              const SizedBox(height: 12),
+              TextField(
+                controller: controller,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  prefixText: '₹',
+                  border: OutlineInputBorder(),
+                  focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Color(0xFF2CA87E))),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: Color(0xFF888888))),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2CA87E),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                final amount = double.tryParse(controller.text) ?? 0.0;
+                if (amount <= 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid amount')),
+                  );
+                  return;
+                }
+                viewModel.deposit(amount);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Successfully deposited ₹${amount.toStringAsFixed(2)}!')),
+                );
+              },
+              child: const Text('Deposit', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -1956,8 +2205,24 @@ class _BetConfirmPanelState extends State<_BetConfirmPanel> {
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: () {
+                  if (finalAmount > widget.viewModel.state.balance) {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Insufficient balance! Please deposit funds.'),
+                        backgroundColor: Color(0xFFF15147),
+                      ),
+                    );
+                    return;
+                  }
                   widget.viewModel.placeBet(widget.choice, finalAmount);
                   Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Bet of ₹$finalAmount placed successfully!'),
+                      backgroundColor: const Color(0xFF2CA87E),
+                    ),
+                  );
                 },
                 child: const Text('Confirm Bet', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold)),
               ),

@@ -96,6 +96,7 @@ class K3ViewModel extends ChangeNotifier {
       myBets: mockBets,
       chartPage: 1,
       gameHistoryPage: 1,
+      balance: 2.03,
       allHistories: allHistories,
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
@@ -174,6 +175,18 @@ class K3ViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void deposit(double amount) {
+    _state = _state.copyWith(balance: _state.balance + amount);
+    notifyListeners();
+  }
+
+  bool withdraw(double amount) {
+    if (_state.balance < amount) return false;
+    _state = _state.copyWith(balance: _state.balance - amount);
+    notifyListeners();
+    return true;
+  }
+
   void placeBet(String choice, int amount) {
     debugPrint('K3 Placed bet: Choice: $choice, Amount: $amount, Multiplier: ${_state.multiplier}');
     
@@ -189,7 +202,12 @@ class K3ViewModel extends ChangeNotifier {
     final updatedBets = List<K3Bet>.from(_state.myBets);
     updatedBets.insert(0, newBet);
 
-    _state = _state.copyWith(myBets: updatedBets);
+    final newBalance = _state.balance - finalAmount;
+
+    _state = _state.copyWith(
+      myBets: updatedBets,
+      balance: newBalance,
+    );
     notifyListeners();
   }
 
@@ -403,6 +421,8 @@ class K3ViewModel extends ChangeNotifier {
     final updatedBets = List<K3Bet>.from(_state.myBets);
     K3ResolutionResult? activeTabResolution;
 
+    double totalPayoutToAdd = 0.0;
+
     final activeTab = _state.activeTab;
 
     for (final tab in K3TabType.values) {
@@ -432,6 +452,7 @@ class K3ViewModel extends ChangeNotifier {
             
             tabTotalBet += bet.amount;
             tabTotalPayout += payout;
+            totalPayoutToAdd += payout;
 
             updatedBets[i] = bet.copyWith(
               isResolved: true,
@@ -464,6 +485,7 @@ class K3ViewModel extends ChangeNotifier {
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
       myBets: updatedBets,
+      balance: _state.balance + totalPayoutToAdd,
       lastResolution: activeTabResolution,
     );
     notifyListeners();

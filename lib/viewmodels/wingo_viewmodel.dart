@@ -45,6 +45,7 @@ class WingoViewModel extends ChangeNotifier {
       myBets: const [],
       chartPage: 1,
       gameHistoryPage: 1,
+      balance: 2.03, // Match Daman screenshot exactly
       allHistories: allHistories,
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
@@ -117,6 +118,18 @@ class WingoViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void deposit(double amount) {
+    _state = _state.copyWith(balance: _state.balance + amount);
+    notifyListeners();
+  }
+
+  bool withdraw(double amount) {
+    if (_state.balance < amount) return false;
+    _state = _state.copyWith(balance: _state.balance - amount);
+    notifyListeners();
+    return true;
+  }
+
   void placeBet(String choice, int amount) {
     debugPrint('Placed bet: Choice: $choice, Amount: $amount, Multiplier: ${_state.multiplier}');
     
@@ -132,7 +145,13 @@ class WingoViewModel extends ChangeNotifier {
     final updatedBets = List<WingoBet>.from(_state.myBets);
     updatedBets.insert(0, newBet);
 
-    _state = _state.copyWith(myBets: updatedBets);
+    // Deduct bet amount from dummy wallet balance
+    final newBalance = _state.balance - finalAmount;
+
+    _state = _state.copyWith(
+      myBets: updatedBets,
+      balance: newBalance,
+    );
     notifyListeners();
   }
 
@@ -181,7 +200,6 @@ class WingoViewModel extends ChangeNotifier {
     if (choice == 'Red') return const [0, 2, 4, 6, 8].contains(number);
     if (choice == 'Violet') return const [0, 5].contains(number);
     
-    // Exact number selection
     final parsedNumber = int.tryParse(choice);
     if (parsedNumber != null) {
       return parsedNumber == number;
@@ -194,11 +212,10 @@ class WingoViewModel extends ChangeNotifier {
     if (choice == 'Violet') return amount * 4.5;
     if (choice == 'Green' || choice == 'Red') {
       if (number == 0 || number == 5) {
-        return amount * 1.5; // Split color win multiplier (violet + red/green)
+        return amount * 1.5;
       }
       return amount * 2.0;
     }
-    // Exact number multiplier (9x)
     return amount * 9.0;
   }
 
@@ -241,7 +258,7 @@ class WingoViewModel extends ChangeNotifier {
     
     final totalSecondsInDay = now.hour * 3600 + now.minute * 60 + now.second;
     final periodIndex = totalSecondsInDay ~/ intervalLengthSeconds;
-    final periodIndexStr = periodIndex.toString().padLeft(4, '0');
+    final periodIndexStr = periodIndex.toString().padLeft(5, '0');
     return '$dateStr$typeCode$periodIndexStr';
   }
 
@@ -319,6 +336,7 @@ class WingoViewModel extends ChangeNotifier {
     final allTimeRemaining = Map<WingoTabType, int>.from(_state.allTimeRemaining);
     final updatedBets = List<WingoBet>.from(_state.myBets);
     WingoResolutionResult? activeTabResolution;
+    double totalPayoutToAdd = 0.0;
 
     final activeTab = _state.activeTab;
 
@@ -350,6 +368,7 @@ class WingoViewModel extends ChangeNotifier {
             
             tabTotalBet += bet.amount;
             tabTotalPayout += payout;
+            totalPayoutToAdd += payout;
 
             updatedBets[i] = bet.copyWith(
               isResolved: true,
@@ -382,6 +401,7 @@ class WingoViewModel extends ChangeNotifier {
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
       myBets: updatedBets,
+      balance: _state.balance + totalPayoutToAdd,
       lastResolution: activeTabResolution,
     );
     notifyListeners();
@@ -394,6 +414,6 @@ class WingoViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
-    // Singleton remains active in background; ignore framework dispose.
+    // Singleton remains active; ignore framework dispose.
   }
 }

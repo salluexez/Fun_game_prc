@@ -103,6 +103,7 @@ class K3State {
   final List<K3Bet> myBets;
   final int chartPage;
   final int gameHistoryPage;
+  final double balance;
 
   // Parallel background tracking fields
   final Map<K3TabType, List<K3DrawResult>> allHistories;
@@ -123,6 +124,7 @@ class K3State {
     required this.myBets,
     required this.chartPage,
     required this.gameHistoryPage,
+    required this.balance,
     required this.allHistories,
     required this.allPeriodIds,
     required this.allTimeRemaining,
@@ -140,6 +142,7 @@ class K3State {
     List<K3Bet>? myBets,
     int? chartPage,
     int? gameHistoryPage,
+    double? balance,
     Map<K3TabType, List<K3DrawResult>>? allHistories,
     Map<K3TabType, String>? allPeriodIds,
     Map<K3TabType, int>? allTimeRemaining,
@@ -157,6 +160,7 @@ class K3State {
       myBets: myBets ?? this.myBets,
       chartPage: chartPage ?? this.chartPage,
       gameHistoryPage: gameHistoryPage ?? this.gameHistoryPage,
+      balance: balance ?? this.balance,
       allHistories: allHistories ?? this.allHistories,
       allPeriodIds: allPeriodIds ?? this.allPeriodIds,
       allTimeRemaining: allTimeRemaining ?? this.allTimeRemaining,

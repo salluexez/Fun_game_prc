@@ -93,6 +93,7 @@ class WingoState {
   final List<WingoBet> myBets;
   final int chartPage;
   final int gameHistoryPage;
+  final double balance;
   
   // Parallel background tracking fields
   final Map<WingoTabType, List<DrawResult>> allHistories;
@@ -112,6 +113,7 @@ class WingoState {
     required this.myBets,
     required this.chartPage,
     required this.gameHistoryPage,
+    required this.balance,
     required this.allHistories,
     required this.allPeriodIds,
     required this.allTimeRemaining,
@@ -128,6 +130,7 @@ class WingoState {
     List<WingoBet>? myBets,
     int? chartPage,
     int? gameHistoryPage,
+    double? balance,
     Map<WingoTabType, List<DrawResult>>? allHistories,
     Map<WingoTabType, String>? allPeriodIds,
     Map<WingoTabType, int>? allTimeRemaining,
@@ -201,6 +204,7 @@ class WingoState {
       myBets: myBets ?? fallbackBets,
       chartPage: chartPage ?? fallbackChartPage,
       gameHistoryPage: gameHistoryPage ?? fallbackGameHistoryPage,
+      balance: balance ?? this.balance,
       allHistories: allHistories ?? fallbackAllHistories,
       allPeriodIds: allPeriodIds ?? fallbackAllPeriodIds,
       allTimeRemaining: allTimeRemaining ?? fallbackAllTimeRemaining,
