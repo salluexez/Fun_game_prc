@@ -634,22 +634,25 @@ class _WingoContentState extends State<_WingoContent> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       // How to play button
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(15),
-                          border: Border.all(color: Colors.white70, width: 1),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.menu_book, color: Colors.white, size: 12),
-                            SizedBox(width: 4),
-                            Text(
-                              'How to play',
-                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
-                            ),
-                          ],
+                      GestureDetector(
+                        onTap: () => _showHowToPlayDialog(context, state.activeTab),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: Colors.white70, width: 1),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.menu_book, color: Colors.white, size: 12),
+                              SizedBox(width: 4),
+                              Text(
+                                'How to play',
+                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       // Tab title
@@ -767,6 +770,117 @@ class _WingoContentState extends State<_WingoContent> {
           fontSize: 18,
           fontWeight: FontWeight.bold,
         ),
+      ),
+    );
+  }
+
+  void _showHowToPlayDialog(BuildContext context, WingoTabType activeTab) {
+    String tabTitle = 'Wingo1Min';
+    String intro = '1 minutes 1 issue, 45 seconds to order, 15 seconds waiting for the draw. It opens all day. The total number of trade is 1440 issues.';
+    
+    if (activeTab == WingoTabType.seconds30) {
+      tabTitle = 'Wingo30Sec';
+      intro = '30 seconds 1 issue, 25 seconds to order, 5 seconds waiting for the draw. It opens all day. The total number of trade is 2880 issues.';
+    } else if (activeTab == WingoTabType.minute3) {
+      tabTitle = 'Wingo3Min';
+      intro = '3 minutes 1 issue, 2 minutes and 45 seconds to order, 15 seconds waiting for the draw. It opens all day. The total number of trade is 480 issues.';
+    } else if (activeTab == WingoTabType.minute5) {
+      tabTitle = 'Wingo5Min';
+      intro = '5 minutes 1 issue, 4 minutes and 45 seconds to order, 15 seconds waiting for the draw. It opens all day. The total number of trade is 288 issues.';
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF15147),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '• $tabTitle •',
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        intro,
+                        style: const TextStyle(fontSize: 13, color: Color(0xFF555555), height: 1.45),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'If you spend 100 to trade, after deducting 2 service fee, your contract amount is 98:',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF444444), height: 1.45),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildRuleSection('1. Select green:', 'if the result shows 1,3,7,9 you will get (98*2) 196;If the result shows 5, you will get (98*1.5) 147'),
+                      _buildRuleSection('2. Select red:', 'if the result shows 2,4,6,8 you will get (98*2) 196;If the result shows 0, you will get (98*1.5) 147'),
+                      _buildRuleSection('3. Select violet:', 'if the result shows 0 or 5, you will get (98*4.5) 441'),
+                      _buildRuleSection('4. Select number:', 'if the result is the same as the number you selected, you will get (98*9) 882'),
+                      _buildRuleSection('5. Select big:', 'if the result shows 5,6,7,8,9 you will get (98 * 2) 196'),
+                      _buildRuleSection('6. Select small:', 'if the result shows 0,1,2,3,4 you will get (98 * 2) 196'),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: SizedBox(
+                  width: 140,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF15147),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      elevation: 0,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      'Close',
+                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRuleSection(String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF333333)),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: const TextStyle(fontSize: 12.5, color: Color(0xFF666666), height: 1.4),
+          ),
+        ],
       ),
     );
   }

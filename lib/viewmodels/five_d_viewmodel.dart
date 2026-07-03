@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/five_d_model.dart';
+import '../services/wallet_service.dart';
 
 class FiveDViewModel extends ChangeNotifier {
   static final FiveDViewModel _instance = FiveDViewModel._internal();
@@ -13,6 +14,12 @@ class FiveDViewModel extends ChangeNotifier {
 
   FiveDViewModel._internal() {
     _initializeGame(FiveDTabType.minute1);
+
+    // Listen to shared wallet balance updates
+    WalletService().addListener(() {
+      _state = _state.copyWith(balance: WalletService().balance);
+      notifyListeners();
+    });
 
     // Start running the countdown timer
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -85,7 +92,7 @@ class FiveDViewModel extends ChangeNotifier {
       myBets: mockBets,
       chartPage: 1,
       gameHistoryPage: 1,
-      balance: 2.03,
+      balance: WalletService().balance,
       allHistories: allHistories,
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
@@ -165,21 +172,22 @@ class FiveDViewModel extends ChangeNotifier {
   }
 
   void deposit(double amount) {
-    _state = _state.copyWith(balance: _state.balance + amount);
-    notifyListeners();
+    WalletService().deposit(amount);
   }
 
   bool withdraw(double amount) {
-    if (_state.balance < amount) return false;
-    _state = _state.copyWith(balance: _state.balance - amount);
-    notifyListeners();
-    return true;
+    return WalletService().withdraw(amount);
   }
 
   void placeBet(FiveDBetTab positionTab, String choice, int amount) {
     debugPrint('5D Placed bet: Choice: $choice, Amount: $amount, Multiplier: ${_state.multiplier}');
     
     final finalAmount = amount.toDouble();
+    
+    // Deduct bet amount from shared wallet balance
+    final success = WalletService().deduct(finalAmount);
+    if (!success) return;
+
     final newBet = FiveDBet(
       periodId: _state.periodId,
       tabType: _state.activeTab,
@@ -192,11 +200,9 @@ class FiveDViewModel extends ChangeNotifier {
     final updatedBets = List<FiveDBet>.from(_state.myBets);
     updatedBets.insert(0, newBet);
 
-    final newBalance = _state.balance - finalAmount;
-
     _state = _state.copyWith(
       myBets: updatedBets,
-      balance: newBalance,
+      balance: WalletService().balance,
     );
     notifyListeners();
   }
@@ -384,10 +390,14 @@ class FiveDViewModel extends ChangeNotifier {
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
       myBets: updatedBets,
-      balance: _state.balance + totalPayoutToAdd,
+      balance: WalletService().balance,
       lastResolution: activeTabResolution,
     );
-    notifyListeners();
+    if (totalPayoutToAdd > 0) {
+      WalletService().addPayout(totalPayoutToAdd);
+    } else {
+      notifyListeners();
+    }
   }
 
   // Generate statistics calculations (missing, avg missing, frequency, max consecutive)

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/k3_model.dart';
+import '../services/wallet_service.dart';
 
 class K3ViewModel extends ChangeNotifier {
   static final K3ViewModel _instance = K3ViewModel._internal();
@@ -13,6 +14,12 @@ class K3ViewModel extends ChangeNotifier {
 
   K3ViewModel._internal() {
     _initializeGame(K3TabType.minute1);
+
+    // Listen to shared wallet balance updates
+    WalletService().addListener(() {
+      _state = _state.copyWith(balance: WalletService().balance);
+      notifyListeners();
+    });
 
     // Start running the countdown timer
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -96,7 +103,7 @@ class K3ViewModel extends ChangeNotifier {
       myBets: mockBets,
       chartPage: 1,
       gameHistoryPage: 1,
-      balance: 2.03,
+      balance: WalletService().balance,
       allHistories: allHistories,
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
@@ -176,21 +183,22 @@ class K3ViewModel extends ChangeNotifier {
   }
 
   void deposit(double amount) {
-    _state = _state.copyWith(balance: _state.balance + amount);
-    notifyListeners();
+    WalletService().deposit(amount);
   }
 
   bool withdraw(double amount) {
-    if (_state.balance < amount) return false;
-    _state = _state.copyWith(balance: _state.balance - amount);
-    notifyListeners();
-    return true;
+    return WalletService().withdraw(amount);
   }
 
   void placeBet(String choice, int amount) {
     debugPrint('K3 Placed bet: Choice: $choice, Amount: $amount, Multiplier: ${_state.multiplier}');
     
     final finalAmount = amount.toDouble();
+    
+    // Deduct bet amount from shared wallet balance
+    final success = WalletService().deduct(finalAmount);
+    if (!success) return;
+
     final newBet = K3Bet(
       periodId: _state.periodId,
       tabType: _state.activeTab,
@@ -202,11 +210,9 @@ class K3ViewModel extends ChangeNotifier {
     final updatedBets = List<K3Bet>.from(_state.myBets);
     updatedBets.insert(0, newBet);
 
-    final newBalance = _state.balance - finalAmount;
-
     _state = _state.copyWith(
       myBets: updatedBets,
-      balance: newBalance,
+      balance: WalletService().balance,
     );
     notifyListeners();
   }
@@ -485,10 +491,14 @@ class K3ViewModel extends ChangeNotifier {
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
       myBets: updatedBets,
-      balance: _state.balance + totalPayoutToAdd,
+      balance: WalletService().balance,
       lastResolution: activeTabResolution,
     );
-    notifyListeners();
+    if (totalPayoutToAdd > 0) {
+      WalletService().addPayout(totalPayoutToAdd);
+    } else {
+      notifyListeners();
+    }
   }
 
   void stopTimer() {

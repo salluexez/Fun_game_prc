@@ -616,21 +616,24 @@ class _K3ContentState extends State<_K3Content> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFF15147), width: 1.0),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.menu_book, color: Color(0xFFF15147), size: 13),
-                    SizedBox(width: 3),
-                    Text(
-                      'How to play',
-                      style: TextStyle(color: Color(0xFFF15147), fontSize: 11, fontWeight: FontWeight.bold),
-                    ),
-                  ],
+              GestureDetector(
+                onTap: () => _showHowToPlayDialog(context, state.activeTab),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFF15147), width: 1.0),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.menu_book, color: Color(0xFFF15147), size: 13),
+                      SizedBox(width: 3),
+                      Text(
+                        'How to play',
+                        style: TextStyle(color: Color(0xFFF15147), fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 6),
@@ -675,6 +678,116 @@ class _K3ContentState extends State<_K3Content> {
                 ],
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showHowToPlayDialog(BuildContext context, K3TabType activeTab) {
+    String tabTitle = 'K3 1min';
+    if (activeTab == K3TabType.minute3) tabTitle = 'K3 3min';
+    if (activeTab == K3TabType.minute5) tabTitle = 'K3 5min';
+    if (activeTab == K3TabType.minute10) tabTitle = 'K3 10min';
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFF15147),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20),
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  '• $tabTitle •',
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Fast 3 open with 3 numbers in each period as the opening number, The opening numbers are 111 to 666 Natural number, No zeros in the array, And the opening numbers are in no particular order, Quick 3 is to guess all or part of the 3 winning numbers.',
+                        style: TextStyle(fontSize: 13, color: Color(0xFF555555), height: 1.45),
+                      ),
+                      const SizedBox(height: 16),
+                      _buildRuleSection('Sum Value', 'Place a bet on the sum of three numbers'),
+                      _buildRuleSection('Choose 3 same number all', 'For all the same three numbers (111、222、...、666) Make an all-inclusive bet'),
+                      _buildRuleSection('Choose 3 same number single', 'From all the same three numbers (111、...、666) Choose a group of numbers in any of them to place bets'),
+                      _buildRuleSection('Choose 2 Same Multiple', 'Place a bet on two designated same numbers and an arbitrary number among the three numbers'),
+                      _buildRuleSection('Choose 2 Same Single', 'Place a bet on two designated same numbers and a designated different number among the three numbers'),
+                      _buildRuleSection('3 numbers different', 'Place a bet on three different numbers'),
+                      _buildRuleSection('2 numbers different', 'Place a bet on two designated different numbers and an arbitrary number among the three numbers'),
+                      _buildRuleSection('Choose 3 Consecutive number all', 'For all three consecutive numbers (123、234、345、456) Place a bet'),
+                      const Divider(height: 24),
+                      const Text(
+                        'Description of winning and odds:',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF333333)),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildRuleSection('Sum Value', 'A bet with the same opening number and value is the winning'),
+                      _buildRuleSection('Choose 3 same number all', 'If the opening numbers are any three of the same number, it is the winning'),
+                      _buildRuleSection('Choose 3 same number single', 'A bet that is exactly the same as the opening number is the winning'),
+                      _buildRuleSection('Choose 2 Same Multiple', 'The same number as the two same numbers in the opening number (except for the three same numbers) is the winning'),
+                      _buildRuleSection('Choose 2 Same Single', 'A bet that is exactly the same as the two designated same numbers and one designated different number is the winning'),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: SizedBox(
+                  width: 140,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF15147),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      elevation: 0,
+                    ),
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text(
+                      'Close',
+                      style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildRuleSection(String title, String subtitle) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5, color: Color(0xFF333333)),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            style: const TextStyle(fontSize: 12.5, color: Color(0xFF666666), height: 1.4),
           ),
         ],
       ),

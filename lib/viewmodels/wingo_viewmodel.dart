@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/wingo_model.dart';
+import '../services/wallet_service.dart';
 
 class WingoViewModel extends ChangeNotifier {
   static final WingoViewModel _instance = WingoViewModel._internal();
@@ -13,6 +14,12 @@ class WingoViewModel extends ChangeNotifier {
 
   WingoViewModel._internal() {
     _initializeGame(WingoTabType.seconds30);
+
+    // Listen to shared wallet balance updates
+    WalletService().addListener(() {
+      _state = _state.copyWith(balance: WalletService().balance);
+      notifyListeners();
+    });
 
     // Start running the countdown timer
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -45,7 +52,7 @@ class WingoViewModel extends ChangeNotifier {
       myBets: const [],
       chartPage: 1,
       gameHistoryPage: 1,
-      balance: 2.03, // Match Daman screenshot exactly
+      balance: WalletService().balance,
       allHistories: allHistories,
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
@@ -119,21 +126,22 @@ class WingoViewModel extends ChangeNotifier {
   }
 
   void deposit(double amount) {
-    _state = _state.copyWith(balance: _state.balance + amount);
-    notifyListeners();
+    WalletService().deposit(amount);
   }
 
   bool withdraw(double amount) {
-    if (_state.balance < amount) return false;
-    _state = _state.copyWith(balance: _state.balance - amount);
-    notifyListeners();
-    return true;
+    return WalletService().withdraw(amount);
   }
 
   void placeBet(String choice, int amount) {
     debugPrint('Placed bet: Choice: $choice, Amount: $amount, Multiplier: ${_state.multiplier}');
     
     final finalAmount = amount.toDouble();
+    
+    // Deduct bet amount from shared wallet balance
+    final success = WalletService().deduct(finalAmount);
+    if (!success) return;
+
     final newBet = WingoBet(
       periodId: _state.periodId,
       tabType: _state.activeTab,
@@ -145,12 +153,9 @@ class WingoViewModel extends ChangeNotifier {
     final updatedBets = List<WingoBet>.from(_state.myBets);
     updatedBets.insert(0, newBet);
 
-    // Deduct bet amount from dummy wallet balance
-    final newBalance = _state.balance - finalAmount;
-
     _state = _state.copyWith(
       myBets: updatedBets,
-      balance: newBalance,
+      balance: WalletService().balance,
     );
     notifyListeners();
   }
@@ -401,10 +406,14 @@ class WingoViewModel extends ChangeNotifier {
       allPeriodIds: allPeriodIds,
       allTimeRemaining: allTimeRemaining,
       myBets: updatedBets,
-      balance: _state.balance + totalPayoutToAdd,
+      balance: WalletService().balance,
       lastResolution: activeTabResolution,
     );
-    notifyListeners();
+    if (totalPayoutToAdd > 0) {
+      WalletService().addPayout(totalPayoutToAdd);
+    } else {
+      notifyListeners();
+    }
   }
 
   void stopTimer() {
