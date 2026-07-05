@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/trx_wingo_model.dart';
 import '../services/wallet_service.dart';
+import '../services/api_service.dart';
 
 class TrxWingoViewModel extends ChangeNotifier {
   static final TrxWingoViewModel _instance = TrxWingoViewModel._internal();
@@ -106,6 +107,17 @@ class TrxWingoViewModel extends ChangeNotifier {
     // Deduct bet amount from shared wallet balance
     final success = WalletService().deduct(finalAmount);
     if (!success) return;
+
+    if (ApiService().isLoggedIn) {
+      ApiService().getActivePeriod('trx_wingo').then((activePeriod) {
+        if (activePeriod != null) {
+          final dbPeriodId = activePeriod['id'];
+          ApiService().placeBet(ApiService().currentUserId!, dbPeriodId, choice, finalAmount).then((_) {
+            WalletService().syncBalance();
+          });
+        }
+      });
+    }
 
     final newBet = TrxWingoBet(
       periodId: _state.periodId,

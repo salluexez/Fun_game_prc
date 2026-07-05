@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daman Admin Control Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <div class="w-64 bg-slate-900 text-white flex flex-col">
+      <div class="p-6 border-b border-slate-800">
+        <h1 class="text-xl font-bold tracking-wider text-red-500">DAMAN ADMIN</h1>
+        <p class="text-xs text-gray-400 mt-1">Local PostgreSQL Management</p>
+      </div>
+      <nav class="flex-1 p-4 space-y-2">
+        <button onclick="switchTab('users')" id="btn-users" class="w-full text-left py-2 px-4 rounded bg-red-600 font-semibold transition">Users Management</button>
+        <button onclick="switchTab('transactions')" id="btn-transactions" class="w-full text-left py-2 px-4 rounded hover:bg-slate-800 transition text-gray-300">Transaction Requests</button>
+        <button onclick="switchTab('results')" id="btn-results" class="w-full text-left py-2 px-4 rounded hover:bg-slate-800 transition text-gray-300">Game Results Override</button>
+        <button onclick="switchTab('settings')" id="btn-settings" class="w-full text-left py-2 px-4 rounded hover:bg-slate-800 transition text-gray-300">System QR Settings</button>
+      </nav>
+      <div class="p-4 border-t border-slate-800 text-center text-xs text-gray-500">
+        © 2026 Daman System
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-y-auto">
+      <header class="bg-white shadow px-8 py-4 flex justify-between items-center">
+        <h2 id="tab-title" class="text-2xl font-bold text-slate-800">Users Management</h2>
+        <div class="flex items-center space-x-2">
+          <span class="w-3 h-3 bg-green-500 rounded-full animate-ping"></span>
+          <span class="text-sm font-semibold text-gray-600">Database Connected</span>
+        </div>
+      </header>
+
+      <main class="p-8 flex-1">
+        <!-- Users Tab -->
+        <div id="tab-users" class="space-y-6">
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User ID</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Phone Number</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Wallet Balance</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="users-table-body" class="bg-white divide-y divide-gray-200">
+                <!-- Dynamic Content -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Transactions Tab -->
+        <div id="tab-transactions" class="space-y-6 hidden">
+          <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User Phone</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Receipt</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Action</th>
+                </tr>
+              </thead>
+              <tbody id="transactions-table-body" class="bg-white divide-y divide-gray-200">
+                <!-- Dynamic Content -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Results Override Tab -->
+        <div id="tab-results" class="space-y-6 hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="bg-white p-6 rounded-lg shadow space-y-4">
+              <h3 class="text-lg font-bold text-slate-800 border-b pb-2">Active Round Details</h3>
+              <div class="space-y-2">
+                <label class="block text-sm font-semibold text-gray-600">Select Game Type</label>
+                <select id="game-select" onchange="fetchActivePeriod()" class="w-full border rounded px-3 py-2">
+                  <option value="wingo">Wingo 1 Min</option>
+                  <option value="trx_wingo">TRX Wingo 1 Min</option>
+                  <option value="k3">K3 1 Min</option>
+                  <option value="5d">5D 1 Min</option>
+                </select>
+              </div>
+              <div class="p-4 bg-gray-50 rounded space-y-2 text-sm text-gray-700">
+                <p><strong>Period ID:</strong> <span id="active-period-id" class="text-red-600 font-bold">Loading...</span></p>
+                <p><strong>Block Height (TRX):</strong> <span id="active-block-height">-</span></p>
+                <p><strong>Block Hash (TRX):</strong> <span id="active-block-hash">-</span></p>
+              </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow space-y-4">
+              <h3 class="text-lg font-bold text-slate-800 border-b pb-2">Outcome Override Panel</h3>
+              <div class="space-y-2">
+                <label class="block text-sm font-semibold text-gray-600">Enter Winning Result</label>
+                <input type="text" id="override-result-input" placeholder="e.g. 5 or Green or 2,3,4" class="w-full border rounded px-3 py-2">
+                <p class="text-xs text-gray-400 mt-1">
+                  - <strong>Wingo/TRX:</strong> color (Red/Green/Violet), number (0-9), or size (Big/Small).<br>
+                  - <strong>K3:</strong> 3 comma-separated dice e.g. "1,4,6".<br>
+                  - <strong>5D:</strong> 5 comma-separated digits e.g. "5,2,9,4,0".
+                </p>
+              </div>
+              <button onclick="submitOverride()" class="w-full py-2 bg-red-600 text-white font-bold rounded hover:bg-red-700 transition">Apply Result Override</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- System QR Settings Tab -->
+        <div id="tab-settings" class="space-y-6 hidden">
+          <div class="bg-white p-6 rounded-lg shadow space-y-4 max-w-xl">
+            <h3 class="text-lg font-bold text-slate-800 border-b pb-2">Offline Payment Settings</h3>
+            <div class="space-y-2">
+              <label class="block text-sm font-semibold text-gray-600">Deposit QR Image Link</label>
+              <input type="text" id="setting-qr-input" class="w-full border rounded px-3 py-2">
+            </div>
+            <button onclick="submitQrSettings()" class="py-2 px-6 bg-red-600 text-white font-bold rounded hover:bg-red-700 transition">Save Link Settings</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Javascript Logic -->
+  <script>
+    let activeTab = 'users';
+
+    function switchTab(tab) {
+      document.getElementById(`tab-${activeTab}`).classList.add('hidden');
+      document.getElementById(`btn-${activeTab}`).className = "w-full text-left py-2 px-4 rounded hover:bg-slate-800 transition text-gray-300";
+      
+      activeTab = tab;
+      document.getElementById(`tab-${activeTab}`).classList.remove('hidden');
+      document.getElementById(`btn-${activeTab}`).className = "w-full text-left py-2 px-4 rounded bg-red-600 font-semibold transition text-white";
+
+      // Set Title
+      const titles = {
+        users: 'Users Management',
+        transactions: 'Transaction Requests',
+        results: 'Game Results Override',
+        settings: 'System QR Settings'
+      };
+      document.getElementById('tab-title').innerText = titles[tab];
+
+      if (tab === 'users') fetchUsers();
+      if (tab === 'transactions') fetchTransactions();
+      if (tab === 'results') fetchActivePeriod();
+      if (tab === 'settings') fetchQrSettings();
+    }
+
+    // 1. Fetch Users
+    async function fetchUsers() {
+      const res = await fetch('/api/admin/users');
+      const data = await res.json();
+      const body = document.getElementById('users-table-body');
+      body.innerHTML = '';
+
+      data.forEach(user => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-mono">${user.id.substring(0, 8)}...</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">${user.phoneNumber}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-green-600">₹${parseFloat(user.balance).toFixed(2)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm">
+            <span class="px-2 py-1 text-xs rounded-full font-bold ${user.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">${user.status}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+            <button onclick="editBalance('${user.id}', ${user.balance})" class="text-blue-600 hover:text-blue-900 font-bold">Edit Balance</button>
+            <button onclick="toggleStatus('${user.id}', '${user.status}')" class="text-red-600 hover:text-red-900 font-bold">${user.status === 'active' ? 'Suspend' : 'Activate'}</button>
+          </td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    async function editBalance(userId, current) {
+      const newBal = prompt("Enter new balance (₹):", current);
+      if (newBal !== null) {
+        const amount = parseFloat(newBal);
+        if (!isNaN(amount) && amount >= 0) {
+          await fetch('/api/admin/users/balance', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ userId, amount })
+          });
+          fetchUsers();
+        }
+      }
+    }
+
+    async function toggleStatus(userId, status) {
+      const newStatus = status === 'active' ? 'suspended' : 'active';
+      await fetch('/api/admin/users/status', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ userId, status: newStatus })
+      });
+      fetchUsers();
+    }
+
+    // 2. Fetch Transactions
+    async function fetchTransactions() {
+      const res = await fetch('/api/admin/transactions');
+      const data = await res.json();
+      const body = document.getElementById('transactions-table-body');
+      body.innerHTML = '';
+
+      data.forEach(tx => {
+        const date = new Date(tx.createdAt).toLocaleTimeString();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold">${tx.phoneNumber}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold capitalize ${tx.type === 'deposit' ? 'text-indigo-600' : 'text-orange-600'}">${tx.type}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-800">₹${parseFloat(tx.amount).toFixed(2)}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm">
+            ${tx.receiptImageUrl ? `<a href="${tx.receiptImageUrl}" target="_blank" class="text-blue-500 hover:underline">View slip</a>` : '-'}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm">
+            <span class="px-2 py-1 text-xs rounded-full font-bold ${tx.status === 'approved' ? 'bg-green-100 text-green-800' : tx.status === 'rejected' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'}">${tx.status}</span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold space-x-2">
+            ${tx.status === 'pending' ? `
+              <button onclick="resolveTx('${tx.id}', 'approved')" class="text-green-600 hover:text-green-900">Approve</button>
+              <button onclick="resolveTx('${tx.id}', 'rejected')" class="text-red-600 hover:text-red-900">Reject</button>
+            ` : '-'}
+          </td>
+        `;
+        body.appendChild(tr);
+      });
+    }
+
+    async function resolveTx(transactionId, status) {
+      await fetch('/api/admin/transactions/resolve', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ transactionId, status })
+      });
+      fetchTransactions();
+    }
+
+    // 3. Fetch Active Period & Results Override
+    let activePeriodDbId = '';
+
+    async function fetchActivePeriod() {
+      const gameType = document.getElementById('game-select').value;
+      const res = await fetch(`/api/games/active-period?gameType=${gameType}`);
+      const data = await res.json();
+      
+      const pText = document.getElementById('active-period-id');
+      const bHt = document.getElementById('active-block-height');
+      const bHh = document.getElementById('active-block-hash');
+
+      if (res.status === 200) {
+        activePeriodDbId = data.id;
+        pText.innerText = data.period_id;
+        bHt.innerText = data.block_height || '-';
+        bHh.innerText = data.hash_value || '-';
+      } else {
+        activePeriodDbId = '';
+        pText.innerText = 'No Active Period';
+        bHt.innerText = '-';
+        bHh.innerText = '-';
+      }
+    }
+
+    async function submitOverride() {
+      const input = document.getElementById('override-result-input');
+      const resultValue = input.value.trim();
+
+      if (!activePeriodDbId) {
+        alert('No active period to override.');
+        return;
+      }
+      if (!resultValue) {
+        alert('Please input a result value.');
+        return;
+      }
+
+      const res = await fetch('/api/admin/override-result', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ gamePeriodId: activePeriodDbId, resultValue })
+      });
+
+      if (res.status === 200) {
+        alert(`Successfully applied override result "${resultValue}" to current period!`);
+        input.value = '';
+        fetchActivePeriod();
+      } else {
+        alert('Failed to apply override.');
+      }
+    }
+
+    // 4. Fetch QR Configs
+    async function fetchQrSettings() {
+      const res = await fetch('/api/settings/qr');
+      const data = await res.json();
+      document.getElementById('setting-qr-input').value = data.qrUrl;
+    }
+
+    async function submitQrSettings() {
+      const qrUrl = document.getElementById('setting-qr-input').value.trim();
+      if (!qrUrl) return;
+
+      const res = await fetch('/api/admin/settings/qr', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ qrUrl })
+      });
+
+      if (res.status === 200) {
+        alert('QR code successfully updated!');
+      } else {
+        alert('Failed to update QR code.');
+      }
+    }
+
+    // Initial load
+    fetchUsers();
+  </script>
+</body>
+</html>

@@ -46,3 +46,7 @@ app.*.map.json
 
 # Assets directory
 /assets/
+
+# Database / System Architecture document
+/System_architecture.md
+

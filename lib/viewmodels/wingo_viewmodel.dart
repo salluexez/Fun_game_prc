@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/wingo_model.dart';
 import '../services/wallet_service.dart';
+import '../services/api_service.dart';
 
 class WingoViewModel extends ChangeNotifier {
   static final WingoViewModel _instance = WingoViewModel._internal();
@@ -141,6 +142,17 @@ class WingoViewModel extends ChangeNotifier {
     // Deduct bet amount from shared wallet balance
     final success = WalletService().deduct(finalAmount);
     if (!success) return;
+
+    if (ApiService().isLoggedIn) {
+      ApiService().getActivePeriod('wingo').then((activePeriod) {
+        if (activePeriod != null) {
+          final dbPeriodId = activePeriod['id'];
+          ApiService().placeBet(ApiService().currentUserId!, dbPeriodId, choice, finalAmount).then((_) {
+            WalletService().syncBalance();
+          });
+        }
+      });
+    }
 
     final newBet = WingoBet(
       periodId: _state.periodId,

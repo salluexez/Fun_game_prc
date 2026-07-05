@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/five_d_model.dart';
 import '../services/wallet_service.dart';
+import '../services/api_service.dart';
 
 class FiveDViewModel extends ChangeNotifier {
   static final FiveDViewModel _instance = FiveDViewModel._internal();
@@ -187,6 +188,19 @@ class FiveDViewModel extends ChangeNotifier {
     // Deduct bet amount from shared wallet balance
     final success = WalletService().deduct(finalAmount);
     if (!success) return;
+
+    if (ApiService().isLoggedIn) {
+      final posCode = positionTab.toString().split('.').last.toUpperCase();
+      final dbChoice = "${posCode}_$choice";
+      ApiService().getActivePeriod('5d').then((activePeriod) {
+        if (activePeriod != null) {
+          final dbPeriodId = activePeriod['id'];
+          ApiService().placeBet(ApiService().currentUserId!, dbPeriodId, dbChoice, finalAmount).then((_) {
+            WalletService().syncBalance();
+          });
+        }
+      });
+    }
 
     final newBet = FiveDBet(
       periodId: _state.periodId,

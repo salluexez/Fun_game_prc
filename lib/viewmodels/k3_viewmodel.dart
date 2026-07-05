@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/k3_model.dart';
 import '../services/wallet_service.dart';
+import '../services/api_service.dart';
 
 class K3ViewModel extends ChangeNotifier {
   static final K3ViewModel _instance = K3ViewModel._internal();
@@ -198,6 +199,17 @@ class K3ViewModel extends ChangeNotifier {
     // Deduct bet amount from shared wallet balance
     final success = WalletService().deduct(finalAmount);
     if (!success) return;
+
+    if (ApiService().isLoggedIn) {
+      ApiService().getActivePeriod('k3').then((activePeriod) {
+        if (activePeriod != null) {
+          final dbPeriodId = activePeriod['id'];
+          ApiService().placeBet(ApiService().currentUserId!, dbPeriodId, choice, finalAmount).then((_) {
+            WalletService().syncBalance();
+          });
+        }
+      });
+    }
 
     final newBet = K3Bet(
       periodId: _state.periodId,
