@@ -50,10 +50,10 @@ class _FiveDContentState extends State<_FiveDContent> {
         ),
         centerTitle: true,
         title: Image.asset(
-          'assets/images/logo/h5setting_20240423194834yt8f.png',
+          'assets/images/logo/Zonex.png',
           height: 28,
           errorBuilder: (context, error, stackTrace) => const Text(
-            'Daman 5D',
+            'Zonex 5D',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
           ),
         ),
@@ -375,7 +375,7 @@ class _FiveDContentState extends State<_FiveDContent> {
           const SizedBox(width: 10),
           const Expanded(
             child: Text(
-              'All Recharge payment methods on DamanGames are working fine...',
+              'All Recharge payment methods on ZonexGames are working fine...',
               style: TextStyle(
                 color: Color(0xFF666666),
                 fontSize: 12.5,

@@ -44,7 +44,7 @@ class HomeViewModel extends ChangeNotifier {
     ];
 
     _state = HomeState(
-      logoImagePath: 'assets/images/logo/h5setting_20240423194834yt8f.png',
+      logoImagePath: 'assets/images/logo/Zonex.png',
       bannerImages: const [
         'assets/images/main_screen_images/Banner_202305270515371rsv.png',
         'assets/images/main_screen_images/Banner_20230306180818gxxn.png',

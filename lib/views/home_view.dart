@@ -45,7 +45,7 @@ class HomeView extends StatelessWidget {
                         errorBuilder: (context, error, stackTrace) {
                           // Fallback in case asset loading fails
                           return const Text(
-                            'Daman',
+                            'Zonex',
                             style: TextStyle(
                               color: Color(0xFFF34C43),
                               fontSize: 20,
@@ -622,11 +622,11 @@ class HomeView extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           _buildDisclaimerRow(
-            'Welcome to Daman Games works with more than 10,000 online live game dealers and slot games, all of which are verified fair games.',
+            'Welcome to Zonex Games works with more than 10,000 online live game dealers and slot games, all of which are verified fair games.',
           ),
           const SizedBox(height: 16),
           _buildDisclaimerRow(
-            'Welcome to Daman Games supports fast deposit and withdrawal, and looks forward to your visit.',
+            'Welcome to Zonex Games supports fast deposit and withdrawal, and looks forward to your visit.',
           ),
           const SizedBox(height: 24),
           const Text(
@@ -640,7 +640,7 @@ class HomeView extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Welcome to Daman Games only accepts customers above the age of 18.',
+            'Welcome to Zonex Games only accepts customers above the age of 18.',
             style: TextStyle(
               color: Color(0xFFF75C56),
               fontSize: 13,
@@ -860,7 +860,7 @@ class HomeView extends StatelessWidget {
                     padding: const EdgeInsets.all(2),
                     child: ClipOval(
                       child: Image.asset(
-                        'assets/images/logo/h5setting_20240423194834yt8f.png',
+                        'assets/images/logo/Zonex.png',
                         fit: BoxFit.contain,
                       ),
                     ),

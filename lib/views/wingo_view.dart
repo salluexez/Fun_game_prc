@@ -172,10 +172,10 @@ class _WingoContentState extends State<_WingoContent> {
         ),
         centerTitle: true,
         title: Image.asset(
-          'assets/images/logo/h5setting_20240423194834yt8f.png',
+          'assets/images/logo/Zonex.png',
           height: 28,
           errorBuilder: (context, error, stackTrace) => const Text(
-            'Daman',
+            'Zonex',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
           ),
         ),
@@ -257,7 +257,7 @@ class _WingoContentState extends State<_WingoContent> {
           const SizedBox(width: 10),
           const Expanded(
             child: Text(
-              'Daman is a secured website using encryption to protect your privacy.',
+              'Zonex is a secured website using encryption to protect your privacy.',
               style: TextStyle(
                 color: Color(0xFF666666),
                 fontSize: 12.5,

@@ -176,10 +176,10 @@ class _K3ContentState extends State<_K3Content> {
         ),
         centerTitle: true,
         title: Image.asset(
-          'assets/images/logo/h5setting_20240423194834yt8f.png',
+          'assets/images/logo/Zonex.png',
           height: 28,
           errorBuilder: (context, error, stackTrace) => const Text(
-            'Daman K3',
+            'Zonex K3',
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
           ),
         ),
@@ -266,7 +266,7 @@ class _K3ContentState extends State<_K3Content> {
           const SizedBox(width: 10),
           const Expanded(
             child: Text(
-              'Attention ! Attention ! To all Daman Games members...',
+              'Attention ! Attention ! To all Zonex Games members...',
               style: TextStyle(
                 color: Color(0xFF666666),
                 fontSize: 12.5,

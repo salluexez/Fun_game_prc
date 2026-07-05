@@ -31,7 +31,7 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Daman Games',
+      title: 'Zonex Games',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         brightness: Brightness.light,
