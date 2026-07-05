@@ -2,18 +2,19 @@ const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
 const http = require('http');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // Serving the admin static dashboard from the 'public' directory
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Configure PostgreSQL connection pool.
 // Fallback to local defaults (adjust as needed for pgAdmin 4 connection)
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/postgres'
+  connectionString: process.env.DATABASE_URL || 'postgresql://mohdsalauddin@localhost:5432/postgres'
 });
 
 // Test connection and auto-initialize tables if schema.sql was not run

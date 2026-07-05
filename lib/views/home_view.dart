@@ -5,6 +5,10 @@ import 'wingo_view.dart';
 import 'k3_view.dart';
 import 'five_d_view.dart';
 import 'trx_wingo_view.dart';
+import 'login_view.dart';
+import 'register_view.dart';
+import '../services/api_service.dart';
+import '../services/wallet_service.dart';
 
 class HomeView extends StatelessWidget {
   final HomeViewModel viewModel;
@@ -57,59 +61,116 @@ class HomeView extends StatelessWidget {
                       );
                     },
                   ),
-                  // Log in & Register Buttons
-                  Row(
-                    children: [
-                      // Log in Button
-                      SizedBox(
-                        height: 34,
-                        child: OutlinedButton(
-                          onPressed: viewModel.onLoginPressed,
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: Color(0xFFF34C43), width: 1),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(4),
+                  // Dynamic Auth Buttons
+                  ListenableBuilder(
+                    listenable: ApiService(),
+                    builder: (context, _) {
+                      if (ApiService().isLoggedIn) {
+                        return Row(
+                          children: [
+                            Text(
+                              ApiService().currentUserPhone != null
+                                  ? '${ApiService().currentUserPhone}'
+                                  : 'Logged In',
+                              style: const TextStyle(
+                                color: Color(0xFF333333),
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 18),
-                            backgroundColor: Colors.white,
-                          ),
-                          child: const Text(
-                            'Log in',
-                            style: TextStyle(
-                              color: Color(0xFFF34C43),
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                            const SizedBox(width: 8),
+                            SizedBox(
+                              height: 34,
+                              child: OutlinedButton(
+                                onPressed: () {
+                                  ApiService().logout();
+                                  WalletService().syncBalance();
+                                },
+                                style: OutlinedButton.styleFrom(
+                                  side: const BorderSide(color: Color(0xFFF34C43), width: 1),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  backgroundColor: Colors.white,
+                                ),
+                                child: const Text(
+                                  'Logout',
+                                  style: TextStyle(
+                                    color: Color(0xFFF34C43),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          // Log in Button
+                          SizedBox(
+                            height: 34,
+                            child: OutlinedButton(
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const LoginView()),
+                                );
+                              },
+                              style: OutlinedButton.styleFrom(
+                                side: const BorderSide(color: Color(0xFFF34C43), width: 1),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 18),
+                                backgroundColor: Colors.white,
+                              ),
+                              child: const Text(
+                                'Log in',
+                                style: TextStyle(
+                                  color: Color(0xFFF34C43),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Register Button
-                      GestureDetector(
-                        onTap: viewModel.onRegisterPressed,
-                        child: Container(
-                          height: 34,
-                          padding: const EdgeInsets.symmetric(horizontal: 18),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFF75C53), Color(0xFFF23D31)],
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
+                          const SizedBox(width: 8),
+                          // Register Button
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const RegisterView()),
+                              );
+                            },
+                            child: Container(
+                              height: 34,
+                              padding: const EdgeInsets.symmetric(horizontal: 18),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFF75C53), Color(0xFFF23D31)],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
+                                ),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              alignment: Alignment.center,
+                              child: const Text(
+                                'Register',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
-                            borderRadius: BorderRadius.circular(4),
                           ),
-                          alignment: Alignment.center,
-                          child: const Text(
-                            'Register',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),

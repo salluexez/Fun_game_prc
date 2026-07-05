@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'api_service.dart';
 
@@ -5,8 +8,11 @@ class WalletService extends ChangeNotifier {
   static final WalletService _instance = WalletService._internal();
   factory WalletService() => _instance;
 
+  Timer? _syncTimer;
+
   WalletService._internal() {
     _init();
+    _startSyncTimer();
   }
 
   double _balance = 2.03; // Shared balance starts at 2.03
@@ -20,6 +26,18 @@ class WalletService extends ChangeNotifier {
       _balance = b;
       notifyListeners();
     }
+  }
+
+  void _startSyncTimer() {
+    if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
+      return;
+    }
+    _syncTimer?.cancel();
+    _syncTimer = Timer.periodic(const Duration(seconds: 4), (timer) {
+      if (ApiService().isLoggedIn) {
+        syncBalance();
+      }
+    });
   }
 
   void deposit(double amount) {
