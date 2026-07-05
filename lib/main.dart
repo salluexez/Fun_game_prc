@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'viewmodels/home_viewmodel.dart';
 import 'views/home_view.dart';
+import 'views/login_view.dart';
+import 'services/api_service.dart';
 
 void main() {
   runApp(const MyApp());
@@ -47,7 +49,16 @@ class _MyAppState extends State<MyApp> {
         useMaterial3: true,
         fontFamily: 'Roboto',
       ),
-      home: HomeView(viewModel: _homeViewModel),
+      home: ListenableBuilder(
+        listenable: ApiService(),
+        builder: (context, _) {
+          if (ApiService().isLoggedIn) {
+            return HomeView(viewModel: _homeViewModel);
+          } else {
+            return const LoginView();
+          }
+        },
+      ),
     );
   }
 }

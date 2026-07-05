@@ -74,7 +74,9 @@ class _RegisterViewState extends State<RegisterView> {
             backgroundColor: Color(0xFF2CA87E),
           ),
         );
-        Navigator.pop(context); // Go back to Home
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context); // Go back to Home
+        }
       }
     } else {
       _showError('Registration failed. Phone number might already be registered.');
@@ -97,10 +99,12 @@ class _RegisterViewState extends State<RegisterView> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF34C43),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
       ),
       body: SingleChildScrollView(
         child: Column(

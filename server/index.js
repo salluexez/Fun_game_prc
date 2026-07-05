@@ -264,6 +264,22 @@ app.post('/api/wallet/withdraw', async (req, res) => {
   }
 });
 
+app.get('/api/wallet/transactions', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+  try {
+    const query = await pool.query(
+      'SELECT id, amount, type, status, created_at, receipt_image_url FROM transactions WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId]
+    );
+    res.json(query.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // 3. System Config
 app.get('/api/settings/qr', async (req, res) => {
   try {

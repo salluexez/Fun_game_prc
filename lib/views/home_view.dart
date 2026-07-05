@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import '../viewmodels/home_viewmodel.dart';
 import '../models/game_model.dart';
 import 'wingo_view.dart';
@@ -7,237 +8,564 @@ import 'five_d_view.dart';
 import 'trx_wingo_view.dart';
 import 'login_view.dart';
 import 'register_view.dart';
+import 'deposit_view.dart';
 import '../services/api_service.dart';
 import '../services/wallet_service.dart';
 
-class HomeView extends StatelessWidget {
+class HomeView extends StatefulWidget {
   final HomeViewModel viewModel;
 
   const HomeView({super.key, required this.viewModel});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC), // Light grey background matching Daman app
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60.0),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black12,
-                blurRadius: 4,
-                offset: Offset(0, 2),
-              ),
-            ],
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Daman Logo
-                  ListenableBuilder(
-                    listenable: viewModel,
-                    builder: (context, _) {
-                      return Image.asset(
-                        viewModel.state.logoImagePath,
-                        height: 26,
-                        fit: BoxFit.contain,
-                        errorBuilder: (context, error, stackTrace) {
-                          // Fallback in case asset loading fails
-                          return const Text(
-                            'Zonex',
-                            style: TextStyle(
-                              color: Color(0xFFF34C43),
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 1,
-                            ),
-                          );
-                        },
-                      );
-                    },
+  State<HomeView> createState() => _HomeViewState();
+}
+
+class _HomeViewState extends State<HomeView> {
+  int _selectedIndex = 0;
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: _selectedIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  HomeViewModel get viewModel => widget.viewModel;
+
+  Widget _buildAccountTab(BuildContext context) {
+    return ListenableBuilder(
+      listenable: ApiService(),
+      builder: (context, _) {
+        final isLoggedIn = ApiService().isLoggedIn;
+
+        if (!isLoggedIn) {
+          return Container(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 80),
+                Icon(Icons.account_circle, size: 100, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                const Text(
+                  'Please login to view your account details',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.black54),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF34C43),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const LoginView()),
+                        );
+                      },
+                      child: const Text('Log in', style: TextStyle(color: Colors.white)),
+                    ),
+                    const SizedBox(width: 16),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        side: const BorderSide(color: Color(0xFFF34C43)),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const RegisterView()),
+                        );
+                      },
+                      child: const Text('Register', style: TextStyle(color: Color(0xFFF34C43))),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }
+
+        final phone = ApiService().currentUserPhone ?? 'User';
+        return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFF34C43), Color(0xFFF8736B)],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
                   ),
-                  // Dynamic Auth Buttons
-                  ListenableBuilder(
-                    listenable: ApiService(),
-                    builder: (context, _) {
-                      if (ApiService().isLoggedIn) {
-                        return Row(
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(32),
+                    bottomRight: Radius.circular(32),
+                  ),
+                ),
+                padding: const EdgeInsets.only(left: 24, right: 24, top: 40, bottom: 40),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 60,
+                      height: 60,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                      child: const Icon(Icons.person, size: 40, color: Color(0xFFF34C43)),
+                    ),
+                    const SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          phone,
+                          style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'UID: 9283719',
+                          style: TextStyle(color: Colors.white70, fontSize: 13),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              ListenableBuilder(
+                listenable: WalletService(),
+                builder: (context, _) {
+                  return Container(
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              ApiService().currentUserPhone != null
-                                  ? '${ApiService().currentUserPhone}'
-                                  : 'Logged In',
-                              style: const TextStyle(
-                                color: Color(0xFF333333),
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
+                            const Row(
+                              children: [
+                                Icon(Icons.account_balance_wallet_outlined, color: Color(0xFFF34C43)),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Wallet Balance',
+                                  style: TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.refresh, color: Colors.grey),
+                              onPressed: () => WalletService().syncBalance(),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '₹${WalletService().balance.toStringAsFixed(2)}',
+                          style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
+                        ),
+                        const SizedBox(height: 20),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFF34C43),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const DepositView()),
+                                  );
+                                },
+                                child: const Text('Deposit', style: TextStyle(color: Colors.white)),
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            SizedBox(
-                              height: 34,
+                            const SizedBox(width: 16),
+                            Expanded(
                               child: OutlinedButton(
-                                onPressed: () {
-                                  ApiService().logout();
-                                  WalletService().syncBalance();
-                                },
                                 style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Color(0xFFF34C43), width: 1),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  backgroundColor: Colors.white,
+                                  side: const BorderSide(color: Color(0xFFF34C43)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 ),
-                                child: const Text(
-                                  'Logout',
-                                  style: TextStyle(
-                                    color: Color(0xFFF34C43),
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
+                                onPressed: () {
+                                  final success = WalletService().withdraw(50.0);
+                                  if (success) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Withdraw of ₹50 requested!')),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(content: Text('Insufficient Balance!')),
+                                    );
+                                  }
+                                },
+                                child: const Text('Withdraw', style: TextStyle(color: Color(0xFFF34C43))),
                               ),
                             ),
                           ],
-                        );
-                      }
-                      return Row(
-                        children: [
-                          // Log in Button
-                          SizedBox(
-                            height: 34,
-                            child: OutlinedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const LoginView()),
-                                );
-                              },
-                              style: OutlinedButton.styleFrom(
-                                side: const BorderSide(color: Color(0xFFF34C43), width: 1),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                padding: const EdgeInsets.symmetric(horizontal: 18),
-                                backgroundColor: Colors.white,
-                              ),
-                              child: const Text(
-                                'Log in',
-                                style: TextStyle(
-                                  color: Color(0xFFF34C43),
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Register Button
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => const RegisterView()),
-                              );
-                            },
-                            child: Container(
-                              height: 34,
-                              padding: const EdgeInsets.symmetric(horizontal: 18),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFFF75C53), Color(0xFFF23D31)],
-                                  begin: Alignment.centerLeft,
-                                  end: Alignment.centerRight,
-                                ),
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              alignment: Alignment.center,
-                              child: const Text(
-                                'Register',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  children: [
+                    _buildAccountMenuItem(Icons.description_outlined, 'Bet History', () {}),
+                    const Divider(height: 1, indent: 50),
+                    _buildAccountMenuItem(Icons.history_edu, 'Transaction Details', () {}),
+                    const Divider(height: 1, indent: 50),
+                    _buildAccountMenuItem(Icons.security, 'Security settings', () {}),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF34C43),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                    ),
+                    onPressed: () {
+                      ApiService().logout();
+                      WalletService().syncBalance();
                     },
+                    child: const Text('Log out', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAccountMenuItem(IconData icon, String title, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: const Color(0xFF666666)),
+      title: Text(title, style: const TextStyle(fontSize: 14, color: Color(0xFF333333))),
+      trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+      onTap: onTap,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60.0),
+        child: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.82),
+                border: Border(
+                  bottom: BorderSide(
+                    color: Colors.white.withOpacity(0.6),
+                    width: 1.5,
+                  ),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.04),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
                   ),
                 ],
+              ),
+              child: SafeArea(
+                child: Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.8),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFF34C43).withOpacity(0.05),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: ListenableBuilder(
+                      listenable: viewModel,
+                      builder: (context, _) {
+                        return Image.asset(
+                          viewModel.state.logoImagePath,
+                          height: 34,
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const Text(
+                              'Zonex',
+                              style: TextStyle(
+                                color: Color(0xFFF34C43),
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
         ),
       ),
-      body: ListenableBuilder(
-        listenable: viewModel,
-        builder: (context, _) {
-          final state = viewModel.state;
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _selectedIndex = index;
+          });
+        },
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          ListenableBuilder(
+            listenable: viewModel,
+            builder: (context, _) {
+              final state = viewModel.state;
 
-          return SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 12),
-                
-                // 1. Banner Slider
-                _buildBannerSlider(state),
-                
-                const SizedBox(height: 12),
-                
-                // 2. Announcement Ticker
-                _buildAnnouncementTicker(context, state),
-                
-                const SizedBox(height: 12),
-                
-                // 3. Grid of Category Cards
-                _buildCategoriesGrid(context, state),
-                
-                const SizedBox(height: 16),
-                
-                // 4. Platform Recommendation Section Header
-                _buildPlatformRecommendationHeader(),
-                
-                // 5. Mock Recommendations (visually completes the screen layout)
-                _buildRecommendationContent(context),
-                
-                const SizedBox(height: 16),
-                
-                // 6. Winning Information Section Header
-                _buildWinningInfoHeader(),
-                
-                // 7. Dynamic Winning Information List
-                WinningWinningsTicker(winnings: state.winnings),
-                
-                const SizedBox(height: 16),
-                
-                // 8. Platform Disclaimer & Information Container
-                _buildPlatformDisclaimerCard(),
-                
-                const SizedBox(height: 12),
-                
-                // 9. Platform Menu Options Card
-                _buildPlatformMenuCard(),
-                
-                // 10. Add to Desktop Capsule Button
-                _buildAddToDesktopButton(),
-                
-                const SizedBox(height: 30),
+              return SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+                    
+                    // 1. Banner Slider
+                    _buildBannerSlider(state),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // 2. Announcement Ticker
+                    _buildAnnouncementTicker(context, state),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // 3. Grid of Category Cards
+                    _buildCategoriesGrid(context, state),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // 4. Platform Recommendation Section Header
+                    _buildPlatformRecommendationHeader(),
+                    
+                    // 5. Mock Recommendations (visually completes the screen layout)
+                    _buildRecommendationContent(context),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // 6. Winning Information Section Header
+                    _buildWinningInfoHeader(),
+                    
+                    // 7. Dynamic Winning Information List
+                    WinningWinningsTicker(winnings: state.winnings),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // 8. Platform Disclaimer & Information Container
+                    _buildPlatformDisclaimerCard(),
+                    
+                    const SizedBox(height: 12),
+                    
+                    // 9. Platform Menu Options Card
+                    _buildPlatformMenuCard(),
+                    
+                    // 10. Add to Desktop Capsule Button
+                    _buildAddToDesktopButton(),
+                    
+                    const SizedBox(height: 30),
+                  ],
+                ),
+              );
+            },
+          ),
+          _buildAccountTab(context),
+        ],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.only(left: 36, right: 36, bottom: 16, top: 4),
+          child: Container(
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.65),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.4),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 6),
+                ),
               ],
             ),
-          );
-        },
-      ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(30),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                child: Stack(
+                  children: [
+                    AnimatedAlign(
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeOutCubic,
+                      alignment: _selectedIndex == 0 ? Alignment.centerLeft : Alignment.centerRight,
+                      child: FractionallySizedBox(
+                        widthFactor: 0.5,
+                        child: Container(
+                          margin: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                const Color(0xFFF34C43).withOpacity(0.15),
+                                const Color(0xFFF8736B).withOpacity(0.08),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(26),
+                            border: Border.all(
+                              color: const Color(0xFFF34C43).withOpacity(0.25),
+                              width: 1,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              setState(() {
+                                _selectedIndex = 0;
+                              });
+                              _pageController.animateToPage(
+                                0,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            },
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  _selectedIndex == 0 ? Icons.home : Icons.home_outlined,
+                                  color: _selectedIndex == 0 ? const Color(0xFFF34C43) : const Color(0xFF8E8E93),
+                                  size: 22,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Home',
+                                  style: TextStyle(
+                                    color: _selectedIndex == 0 ? const Color(0xFFF34C43) : const Color(0xFF8E8E93),
+                                    fontSize: 10,
+                                    fontWeight: _selectedIndex == 0 ? FontWeight.bold : FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () {
+                              setState(() {
+                                _selectedIndex = 1;
+                              });
+                              _pageController.animateToPage(
+                                1,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            },
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  _selectedIndex == 1 ? Icons.person : Icons.person_outline,
+                                  color: _selectedIndex == 1 ? const Color(0xFFF34C43) : const Color(0xFF8E8E93),
+                                  size: 22,
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Account',
+                                  style: TextStyle(
+                                    color: _selectedIndex == 1 ? const Color(0xFFF34C43) : const Color(0xFF8E8E93),
+                                    fontSize: 10,
+                                    fontWeight: _selectedIndex == 1 ? FontWeight.bold : FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      )
     );
   }
 

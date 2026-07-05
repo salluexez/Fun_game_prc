@@ -57,7 +57,9 @@ class _LoginViewState extends State<LoginView> {
             backgroundColor: Color(0xFF2CA87E),
           ),
         );
-        Navigator.pop(context); // Go back to Home
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context); // Go back to Home
+        }
       }
     } else {
       _showError('Login failed. Incorrect credentials or suspended account.');
@@ -80,10 +82,12 @@ class _LoginViewState extends State<LoginView> {
       appBar: AppBar(
         backgroundColor: const Color(0xFFF34C43),
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -283,7 +287,7 @@ class _LoginViewState extends State<LoginView> {
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                       ),
                       onPressed: () {
-                        Navigator.pushReplacement(
+                        Navigator.push(
                           context,
                           MaterialPageRoute(builder: (context) => const RegisterView()),
                         );

@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -8,10 +10,11 @@ class ApiService extends ChangeNotifier {
 
   ApiService._internal();
 
-  // Change this URL to connect to your local Node.js server.
-  // - Use 'http://localhost:3000' for iOS Simulators / macOS Desktop.
-  // - Use 'http://10.0.2.2:3000' for Android Emulators.
-  final String _baseUrl = 'http://localhost:3000';
+  String get _baseUrl {
+    if (kIsWeb) return 'http://localhost:3000';
+    if (Platform.isAndroid) return 'http://10.0.2.2:3000';
+    return 'http://localhost:3000';
+  }
 
   String? _currentUserId;
   String? _currentUserPhone;
@@ -26,12 +29,14 @@ class ApiService extends ChangeNotifier {
     notifyListeners();
   }
 
+  void setMockUser(String? id, String? phone) {
+    _currentUserId = id;
+    _currentUserPhone = phone;
+    notifyListeners();
+  }
+
   Future<void> autoLogin() async {
-    // Attempt registration first (if not exists), then login
-    final reg = await register('9999999999', 'password');
-    if (reg == null) {
-      await login('9999999999', 'password');
-    }
+    // Starts as logged out so that fresh boots force authentication
   }
 
   // 1. Authentication
@@ -121,6 +126,18 @@ class ApiService extends ChangeNotifier {
       debugPrint('API Withdraw error: $e');
     }
     return false;
+  }
+
+  Future<List<dynamic>?> getTransactions(String userId) async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/api/wallet/transactions?userId=$userId'));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('API GetTransactions error: $e');
+    }
+    return null;
   }
 
   Future<String> getQrUrl() async {
