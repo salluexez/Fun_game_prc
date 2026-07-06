@@ -140,6 +140,36 @@ class ApiService extends ChangeNotifier {
     return null;
   }
 
+  Future<Map<String, dynamic>?> getUserProfile(String userId) async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/api/user/profile?userId=$userId'));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('API GetUserProfile error: $e');
+    }
+    return null;
+  }
+
+  Future<bool> updateUserUpi(String userId, String upiAddress, String upiName) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/user/upi'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': userId,
+          'upiAddress': upiAddress,
+          'upiName': upiName,
+        }),
+      );
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('API UpdateUserUpi error: $e');
+    }
+    return false;
+  }
+
   Future<String> getQrUrl() async {
     try {
       final response = await http.get(Uri.parse('$_baseUrl/api/settings/qr'));

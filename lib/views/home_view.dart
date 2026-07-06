@@ -9,6 +9,7 @@ import 'trx_wingo_view.dart';
 import 'login_view.dart';
 import 'register_view.dart';
 import 'deposit_view.dart';
+import 'withdraw_view.dart';
 import '../services/api_service.dart';
 import '../services/wallet_service.dart';
 
@@ -215,16 +216,10 @@ class _HomeViewState extends State<HomeView> {
                                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 ),
                                 onPressed: () {
-                                  final success = WalletService().withdraw(50.0);
-                                  if (success) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Withdraw of ₹50 requested!')),
-                                    );
-                                  } else {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text('Insufficient Balance!')),
-                                    );
-                                  }
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (context) => const WithdrawView()),
+                                  );
                                 },
                                 child: const Text('Withdraw', style: TextStyle(color: Color(0xFFF34C43))),
                               ),

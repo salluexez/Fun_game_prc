@@ -109,6 +109,10 @@ async function initializeDatabase() {
       await pool.query(schema);
       console.log('Database tables successfully initialized!');
     }
+    
+    // Ensure UPI columns are present in the users table for existing databases
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS upi_address VARCHAR(100);');
+    await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS upi_name VARCHAR(100);');
   } catch (error) {
     console.error('Failed to initialize database tables:', error.message);
   }
@@ -186,6 +190,52 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     res.json({ id: user.id, phoneNumber: user.phone_number, status: user.status });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/user/profile', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+  try {
+    const query = await pool.query(
+      'SELECT id, phone_number, upi_address, upi_name, status FROM users WHERE id = $1',
+      [userId]
+    );
+
+    if (query.rows.length === 0) {
+      return res.status(400).json({ error: 'User not found' });
+    }
+
+    const user = query.rows[0];
+    res.json({
+      id: user.id,
+      phoneNumber: user.phone_number,
+      upiAddress: user.upi_address || '',
+      upiName: user.upi_name || '',
+      status: user.status
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/api/user/upi', async (req, res) => {
+  const { userId, upiAddress, upiName } = req.body;
+  if (!userId || !upiAddress || !upiName) {
+    return res.status(400).json({ error: 'userId, upiAddress and upiName required' });
+  }
+
+  try {
+    await pool.query(
+      'UPDATE users SET upi_address = $1, upi_name = $2 WHERE id = $3',
+      [upiAddress, upiName, userId]
+    );
+    res.json({ success: true, message: 'UPI details updated successfully' });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });

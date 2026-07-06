@@ -12,23 +12,25 @@ String _formatDateTime(DateTime dt) {
   return '$year-$month-$day $hour:$minute:$second';
 }
 
-class DepositView extends StatefulWidget {
-  const DepositView({super.key});
+class WithdrawView extends StatefulWidget {
+  const WithdrawView({super.key});
 
   @override
-  State<DepositView> createState() => _DepositViewState();
+  State<WithdrawView> createState() => _WithdrawViewState();
 }
 
-class _DepositViewState extends State<DepositView> {
+class _WithdrawViewState extends State<WithdrawView> {
   final _amountController = TextEditingController();
-  final _utrController = TextEditingController();
+  final _upiAddressController = TextEditingController();
+  final _upiNameController = TextEditingController();
 
-  String _selectedChannel = 'Phonepe_QR';
-  double? _selectedAmount;
+  double? _enteredAmount;
   bool _isSubmitting = false;
   bool _isRefreshing = false;
+  bool _isLoadingProfile = true;
 
-  final List<double> _quickAmounts = [500, 1000, 2000, 5000, 10000, 20000, 50000];
+  String _upiAddress = '';
+  String _upiName = '';
 
   @override
   void initState() {
@@ -37,22 +39,40 @@ class _DepositViewState extends State<DepositView> {
       final text = _amountController.text;
       if (text.isEmpty) {
         setState(() {
-          _selectedAmount = null;
+          _enteredAmount = null;
         });
       } else {
         final val = double.tryParse(text);
         setState(() {
-          _selectedAmount = val;
+          _enteredAmount = val;
         });
       }
     });
+    _loadUserProfile();
   }
 
   @override
   void dispose() {
     _amountController.dispose();
-    _utrController.dispose();
+    _upiAddressController.dispose();
+    _upiNameController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserProfile() async {
+    setState(() {
+      _isLoadingProfile = true;
+    });
+    final profile = await ApiService().getUserProfile(ApiService().currentUserId!);
+    if (profile != null) {
+      setState(() {
+        _upiAddress = profile['upiAddress'] ?? '';
+        _upiName = profile['upiName'] ?? '';
+      });
+    }
+    setState(() {
+      _isLoadingProfile = false;
+    });
   }
 
   Future<void> _refreshBalance() async {
@@ -65,26 +85,9 @@ class _DepositViewState extends State<DepositView> {
     });
   }
 
-  void _selectQuickAmount(double amt) {
-    setState(() {
-      _selectedAmount = amt;
-      _amountController.text = amt.toStringAsFixed(0);
-    });
-  }
-
-  void _showPaymentModal(double amount) async {
-    setState(() {
-      _isSubmitting = true;
-    });
-
-    // Fetch Admin QR Code URL
-    final qrUrl = await ApiService().getQrUrl();
-
-    setState(() {
-      _isSubmitting = false;
-    });
-
-    if (!mounted) return;
+  void _showAddUpiModal() {
+    _upiAddressController.text = _upiAddress;
+    _upiNameController.text = _upiName;
 
     showModalBottomSheet(
       context: context,
@@ -111,9 +114,9 @@ class _DepositViewState extends State<DepositView> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    'Scan & Pay',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
+                  Text(
+                    _upiAddress.isEmpty ? 'Add UPI Account' : 'Edit UPI Account',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
                   ),
                   IconButton(
                     icon: const Icon(Icons.close, color: Colors.grey),
@@ -123,43 +126,15 @@ class _DepositViewState extends State<DepositView> {
               ),
               const Divider(),
               const SizedBox(height: 12),
-              Center(
-                child: Column(
-                  children: [
-                    const Text(
-                      'Scan this QR code using PhonePe or any UPI App to Pay',
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 16),
-                    qrUrl.isEmpty
-                        ? const SizedBox(
-                            height: 140,
-                            width: 140,
-                            child: Center(child: CircularProgressIndicator(color: Color(0xFFF34C43))),
-                          )
-                        : ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(
-                              qrUrl,
-                              width: 140,
-                              height: 140,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
               const Text(
-                'Transaction Ref / UTR number',
+                'UPI Account Name',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
               ),
               const SizedBox(height: 8),
               TextField(
-                controller: _utrController,
-                keyboardType: TextInputType.number,
+                controller: _upiNameController,
                 decoration: InputDecoration(
-                  hintText: 'Enter 12-digit UPI UTR number',
+                  hintText: 'Enter account holder name',
                   hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
                   fillColor: const Color(0xFFF5F5F5),
                   filled: true,
@@ -170,7 +145,27 @@ class _DepositViewState extends State<DepositView> {
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+              const Text(
+                'UPI ID / Address',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF333333)),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _upiAddressController,
+                decoration: InputDecoration(
+                  hintText: 'Enter UPI ID (e.g. name@upi)',
+                  hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+                  fillColor: const Color(0xFFF5F5F5),
+                  filled: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -180,50 +175,52 @@ class _DepositViewState extends State<DepositView> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
                   ),
                   onPressed: () async {
-                    final utr = _utrController.text.trim();
-                    if (utr.length < 6) {
+                    final name = _upiNameController.text.trim();
+                    final address = _upiAddressController.text.trim();
+                    
+                    if (name.isEmpty || address.isEmpty || !address.contains('@')) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Please enter a valid Transaction Ref/UTR number')),
+                        const SnackBar(content: Text('Please enter a valid Name and UPI ID')),
                       );
                       return;
                     }
+                    
                     Navigator.pop(modalContext); // Close sheet
                     
                     setState(() {
                       _isSubmitting = true;
                     });
                     
-                    final success = await ApiService().deposit(
+                    final success = await ApiService().updateUserUpi(
                       ApiService().currentUserId!,
-                      amount,
-                      utr,
+                      address,
+                      name,
                     );
                     
-                    setState(() {
-                      _isSubmitting = false;
-                      _utrController.clear();
-                    });
-
                     if (success) {
+                      await _loadUserProfile();
                       if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Deposit request submitted! Pending Admin Approval.'),
+                          content: Text('UPI account updated successfully!'),
                           backgroundColor: Color(0xFF2CA87E),
                         ),
                       );
                     } else {
+                      setState(() {
+                        _isSubmitting = false;
+                      });
                       if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content: Text('Submission failed. Please try again.'),
+                          content: Text('Failed to update UPI account. Please try again.'),
                           backgroundColor: Color(0xFFF15147),
                         ),
                       );
                     }
                   },
                   child: const Text(
-                    'Submit Order',
+                    'Save UPI Details',
                     style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
@@ -235,23 +232,77 @@ class _DepositViewState extends State<DepositView> {
     );
   }
 
-  void _handleDeposit() {
-    final amt = _selectedAmount;
-    if (amt == null || amt < 500 || amt > 50000) {
+  void _handleWithdraw() async {
+    final amt = _enteredAmount;
+    
+    if (_upiAddress.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please enter an amount between ₹500.00 and ₹50,000.00'),
+          content: Text('Please add a UPI account first to withdraw.'),
           backgroundColor: Color(0xFFF15147),
         ),
       );
       return;
     }
-    _showPaymentModal(amt);
+
+    if (amt == null || amt < 500 || amt > 10000000) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please enter an amount between ₹500.00 and ₹10,000,000.00'),
+          backgroundColor: Color(0xFFF15147),
+        ),
+      );
+      return;
+    }
+
+    if (amt > WalletService().balance) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Insufficient balance to withdraw.'),
+          backgroundColor: Color(0xFFF15147),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final success = await ApiService().withdraw(
+      ApiService().currentUserId!,
+      amt,
+    );
+
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    if (success) {
+      await WalletService().syncBalance();
+      _amountController.clear();
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Withdrawal request submitted! Pending Admin Approval.'),
+          backgroundColor: Color(0xFF2CA87E),
+        ),
+      );
+    } else {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Withdrawal failed. Please try again.'),
+          backgroundColor: Color(0xFFF15147),
+        ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool hasAmount = _selectedAmount != null && _selectedAmount! > 0;
+    final bool hasAmount = _enteredAmount != null && _enteredAmount! > 0;
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF7F8FC),
       appBar: AppBar(
@@ -262,7 +313,7 @@ class _DepositViewState extends State<DepositView> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Deposit',
+          'Withdraw',
           style: TextStyle(color: Color(0xFF222222), fontSize: 18, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -271,11 +322,11 @@ class _DepositViewState extends State<DepositView> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const DepositHistoryPage()),
+                MaterialPageRoute(builder: (context) => const WithdrawalHistoryPage()),
               );
             },
             child: const Text(
-              'Deposit history',
+              'Withdrawal history',
               style: TextStyle(color: Color(0xFF666666), fontSize: 13, fontWeight: FontWeight.w500),
             ),
           ),
@@ -288,7 +339,7 @@ class _DepositViewState extends State<DepositView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. Balance Card
+                // 1. Available Balance Card
                 ListenableBuilder(
                   listenable: WalletService(),
                   builder: (context, _) {
@@ -319,7 +370,7 @@ class _DepositViewState extends State<DepositView> {
                               Icon(Icons.stars, color: Colors.white70, size: 16),
                               SizedBox(width: 6),
                               Text(
-                                'Balance',
+                                'Available balance',
                                 style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
                               ),
                             ],
@@ -358,120 +409,45 @@ class _DepositViewState extends State<DepositView> {
                   },
                 ),
 
-
-
-                // 4. Deposit Amount
+                // 2. ARPay Header Info Card
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Row(
                     children: [
-                      Row(
-                        children: [
-                          Icon(Icons.account_balance_wallet, color: const Color(0xFFF34C43), size: 18),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Deposit amount',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 14),
-                      // Amount Grid
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 10,
-                          mainAxisSpacing: 10,
-                          childAspectRatio: 2.2,
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFCAAA4).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        itemCount: _quickAmounts.length,
-                        itemBuilder: (context, index) {
-                          final amt = _quickAmounts[index];
-                          final isSelected = _selectedAmount == amt;
-                          
-                          // Format display text (e.g. 1000 -> 1K)
-                          String label = amt.toStringAsFixed(0);
-                          if (amt == 1000) label = '1K';
-                          if (amt == 1500) label = '1.5K';
-                          if (amt == 2000) label = '2K';
-                          if (amt == 3000) label = '3K';
-
-                          return OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              backgroundColor: isSelected ? const Color(0xFFF34C43).withOpacity(0.05) : Colors.transparent,
-                              side: BorderSide(
-                                color: isSelected ? const Color(0xFFF34C43) : Colors.grey.shade200,
-                                width: isSelected ? 1.5 : 1,
-                              ),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              padding: EdgeInsets.zero,
-                            ),
-                            onPressed: () => _selectQuickAmount(amt),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  '₹  ',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: isSelected ? const Color(0xFFF34C43) : Colors.grey,
-                                  ),
-                                ),
-                                Text(
-                                  label,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                    color: isSelected ? const Color(0xFFF34C43) : const Color(0xFF444444),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'A',
+                          style: TextStyle(color: Color(0xFFF34C43), fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                      const SizedBox(height: 16),
-                      // Custom Input Field
-                      TextField(
-                        controller: _amountController,
-                        keyboardType: TextInputType.number,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
-                        decoration: InputDecoration(
-                          prefixIcon: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 14),
-                            child: Text(
-                              '₹',
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFFF34C43)),
+                      const SizedBox(width: 16),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'ARPay',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF222222)),
                             ),
-                          ),
-                          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
-                          hintText: '500.00 - 50,000.00',
-                          hintStyle: const TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.normal),
-                          fillColor: const Color(0xFFF8F9FB),
-                          filled: true,
-                          suffixIcon: IconButton(
-                            icon: const Icon(Icons.cancel, color: Colors.grey, size: 18),
-                            onPressed: () {
-                              _amountController.clear();
-                              setState(() {
-                                _selectedAmount = null;
-                              });
-                            },
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10),
-                            borderSide: BorderSide.none,
-                          ),
+                            SizedBox(height: 4),
+                            Text(
+                              'Supports UPI for fast payment, and bonuses for withdrawals',
+                              style: TextStyle(color: Colors.grey, fontSize: 11, height: 1.3),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -480,7 +456,103 @@ class _DepositViewState extends State<DepositView> {
 
                 const SizedBox(height: 16),
 
-                // 5. Recharge Instructions
+                // 3. UPI Selector / Add UPI Block
+                _isLoadingProfile
+                    ? const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Center(child: CircularProgressIndicator(color: Color(0xFFF34C43))),
+                      )
+                    : Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.payment, color: Color(0xFFF34C43), size: 18),
+                                SizedBox(width: 8),
+                                Text(
+                                  'Withdrawal Account (UPI)',
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 14),
+                            _upiAddress.isEmpty
+                                ? InkWell(
+                                    onTap: _showAddUpiModal,
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF9FAFC),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(color: Colors.grey.shade200, width: 1),
+                                      ),
+                                      child: const Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.add_circle_outline, color: Color(0xFFF34C43), size: 20),
+                                          SizedBox(width: 8),
+                                          Text(
+                                            'Add UPI Details',
+                                            style: TextStyle(
+                                              color: Color(0xFFF34C43),
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFCAAA4).withOpacity(0.08),
+                                      border: Border.all(color: const Color(0xFFF34C43).withOpacity(0.2), width: 1),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.account_balance_wallet_rounded, color: Color(0xFFF34C43), size: 28),
+                                        const SizedBox(width: 14),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                _upiName,
+                                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF222222)),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                _upiAddress,
+                                                style: const TextStyle(color: Color(0xFF555555), fontSize: 13),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        IconButton(
+                                          icon: const Icon(Icons.edit, color: Color(0xFFF34C43), size: 20),
+                                          onPressed: _showAddUpiModal,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                          ],
+                        ),
+                      ),
+
+                const SizedBox(height: 16),
+
+                // 4. Withdrawal Amount Input
                 Container(
                   width: double.infinity,
                   margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -492,21 +564,94 @@ class _DepositViewState extends State<DepositView> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      TextField(
+                        controller: _amountController,
+                        keyboardType: TextInputType.number,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
+                        decoration: InputDecoration(
+                          prefixIcon: const Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 14),
+                            child: Text(
+                              '₹',
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFFF34C43)),
+                            ),
+                          ),
+                          prefixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+                          hintText: 'Please enter the amount',
+                          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14, fontWeight: FontWeight.normal),
+                          fillColor: const Color(0xFFF8F9FB),
+                          filled: true,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.menu_book, color: const Color(0xFFF34C43), size: 18),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'Recharge instructions',
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF222222)),
+                          Text(
+                            'Withdrawable balance ₹${WalletService().balance.toStringAsFixed(2)}',
+                            style: const TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              _amountController.text = WalletService().balance.toStringAsFixed(0);
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: const Color(0xFFF34C43)),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'All',
+                                style: TextStyle(color: Color(0xFFF34C43), fontSize: 11, fontWeight: FontWeight.bold),
+                              ),
+                            ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 14),
-                      _buildInstructionItem('If the transfer time is up, please fill out the deposit form again.'),
-                      _buildInstructionItem('The transfer amount must match the order you created, otherwise the money cannot be credited successfully.'),
-                      _buildInstructionItem('If you transfer the wrong amount, our company will not be responsible for the lost amount!'),
-                      _buildInstructionItem('Note: do not cancel the deposit order after the money has been transferred.'),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Withdrawal amount received',
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                          Text(
+                            '₹${_enteredAmount?.toStringAsFixed(2) ?? "0.00"}',
+                            style: const TextStyle(color: Color(0xFFF34C43), fontSize: 14, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // 5. Withdrawal Instructions
+                Container(
+                  width: double.infinity,
+                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildInstructionItem('Need to bet ₹0.28 to be able to withdraw'),
+                      _buildInstructionItem('Withdraw time 00:00-23:55'),
+                      _buildInstructionItem('Inday Remaining Withdrawal Times 3'),
+                      _buildInstructionItem('Withdrawal amount range ₹500.00-₹10,000,000.00'),
+                      _buildInstructionItem('Please confirm your beneficial account information before withdrawing. If your information is incorrect, our company will not be liable for the amount of loss'),
+                      _buildInstructionItem('If your beneficial information is incorrect, please contact customer service'),
                     ],
                   ),
                 ),
@@ -545,12 +690,12 @@ class _DepositViewState extends State<DepositView> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Recharge Method:',
+                  'Withdrawal Method:',
                   style: TextStyle(color: Colors.grey, fontSize: 11),
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  _selectedChannel,
+                  _upiAddress.isEmpty ? 'Not set' : 'UPI',
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF222222)),
                 ),
               ],
@@ -563,9 +708,9 @@ class _DepositViewState extends State<DepositView> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                 elevation: 0,
               ),
-              onPressed: _handleDeposit,
+              onPressed: _handleWithdraw,
               child: const Text(
-                'Deposit',
+                'Withdraw',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
               ),
             ),
@@ -583,7 +728,7 @@ class _DepositViewState extends State<DepositView> {
         children: [
           Container(
             margin: const EdgeInsets.only(top: 4, right: 10),
-            child: const Icon(Icons.lens, size: 6, color: Color(0xFFF34C43)), // diamond-like or circular point
+            child: const Icon(Icons.lens, size: 6, color: Color(0xFFF34C43)),
           ),
           Expanded(
             child: Text(
@@ -598,10 +743,10 @@ class _DepositViewState extends State<DepositView> {
 }
 
 // ----------------------------------------------------
-// Deposit History Page
+// Withdrawal History Page
 // ----------------------------------------------------
-class DepositHistoryPage extends StatelessWidget {
-  const DepositHistoryPage({super.key});
+class WithdrawalHistoryPage extends StatelessWidget {
+  const WithdrawalHistoryPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -615,7 +760,7 @@ class DepositHistoryPage extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Deposit History',
+          'Withdrawal History',
           style: TextStyle(color: Color(0xFF222222), fontSize: 18, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -628,10 +773,10 @@ class DepositHistoryPage extends StatelessWidget {
           }
           final transactions = snapshot.data;
           
-          // Filter to deposits only
-          final deposits = transactions?.where((t) => t['type'] == 'deposit').toList() ?? [];
+          // Filter to withdrawals only
+          final withdrawals = transactions?.where((t) => t['type'] == 'withdrawal').toList() ?? [];
 
-          if (deposits.isEmpty) {
+          if (withdrawals.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -649,14 +794,13 @@ class DepositHistoryPage extends StatelessWidget {
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: deposits.length,
+            itemCount: withdrawals.length,
             itemBuilder: (context, index) {
-              final dep = deposits[index];
-              final amount = double.tryParse(dep['amount'].toString()) ?? 0.0;
-              final status = dep['status'] ?? 'pending';
-              final createdAt = DateTime.tryParse(dep['created_at']?.toString() ?? '') ?? DateTime.now();
+              final wd = withdrawals[index];
+              final amount = double.tryParse(wd['amount'].toString()) ?? 0.0;
+              final status = wd['status'] ?? 'pending';
+              final createdAt = DateTime.tryParse(wd['created_at']?.toString() ?? '') ?? DateTime.now();
               final dateStr = _formatDateTime(createdAt);
-              final utr = dep['receipt_image_url'] ?? '';
 
               Color statusColor = Colors.orange;
               if (status == 'approved') statusColor = const Color(0xFF2CA87E);
@@ -682,7 +826,7 @@ class DepositHistoryPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text(
-                          'Deposit Request',
+                          'Withdrawal Request',
                           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF333333)),
                         ),
                         Container(
@@ -713,10 +857,10 @@ class DepositHistoryPage extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('UTR / Reference:', style: TextStyle(color: Colors.grey, fontSize: 13)),
-                        Text(
-                          utr.isEmpty ? 'N/A' : utr,
-                          style: const TextStyle(fontSize: 13, color: Color(0xFF555555)),
+                        const Text('Method:', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                        const Text(
+                          'UPI',
+                          style: TextStyle(fontSize: 13, color: Color(0xFF555555)),
                         ),
                       ],
                     ),
