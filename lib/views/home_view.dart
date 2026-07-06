@@ -1321,30 +1321,7 @@ class _WinningWinningsTickerState extends State<WinningWinningsTicker> {
     }
   }
 
-  List<Color> _getGameGradient(String path) {
-    if (path.contains('lotterycategory_')) {
-      return const [Color(0xFFFA6557), Color(0xFFF13D30)];
-    }
-    if (path.contains('gamecategory_20240412114911i998.png')) {
-      return const [Color(0xFFFF8B7D), Color(0xFFFF4935)]; // Casino
-    }
-    if (path.contains('gamecategory_20240412114929rkd9.png')) {
-      return const [Color(0xFFA17DFF), Color(0xFF6732FF)]; // Slots
-    }
-    if (path.contains('gamecategory_20240412114921c1tg.png')) {
-      return const [Color(0xFFFFB752), Color(0xFFFF8800)]; // Sports
-    }
-    if (path.contains('gamecategory_2024041211490142rl.png')) {
-      return const [Color(0xFF68B2FF), Color(0xFF2675FF)]; // Rummy
-    }
-    if (path.contains('gamecategory_20240412114848em94.png')) {
-      return const [Color(0xFFFF7E9B), Color(0xFFFA2C5E)]; // Fishing
-    }
-    if (path.contains('gamecategory_20240412114937mcis.png')) {
-      return const [Color(0xFF5EDFFF), Color(0xFF00A2C9)]; // Original
-    }
-    return const [Color(0xFFFA6557), Color(0xFFF13D30)];
-  }
+
 
   Widget _buildWinningItemCard(WinningInfo info, Animation<double> animation) {
     // Combine Fade and Slide transition for an elegant scrolling drop effect

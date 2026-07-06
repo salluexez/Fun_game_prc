@@ -2115,7 +2115,7 @@ class _K3ContentState extends State<_K3Content> {
                           style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
                         ),
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               ],

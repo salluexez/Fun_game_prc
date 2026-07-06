@@ -1016,7 +1016,7 @@ class _WingoContentState extends State<_WingoContent> {
 
     return InkWell(
       onTap: () => _showBetBottomSheet(context, viewModel, '$number'),
-      borderRadius: BoxShape.circle == null ? null : BorderRadius.circular(25),
+      borderRadius: BorderRadius.circular(25),
       child: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
