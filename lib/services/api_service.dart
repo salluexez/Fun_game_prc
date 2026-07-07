@@ -183,6 +183,69 @@ class ApiService extends ChangeNotifier {
     return '';
   }
 
+  Future<Map<String, dynamic>?> placeAviatorBet(String userId, double betAmount) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/aviator/bet'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': userId,
+          'betAmount': betAmount,
+        }),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('API PlaceAviatorBet error: $e');
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> cashoutAviatorBet(String betId, double multiplier) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/aviator/cashout'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'betId': betId,
+          'multiplier': multiplier,
+        }),
+      );
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('API CashoutAviatorBet error: $e');
+    }
+    return null;
+  }
+
+  Future<void> loseAviatorBet(String betId) async {
+    try {
+      await http.post(
+        Uri.parse('$_baseUrl/api/aviator/lose'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'betId': betId}),
+      );
+    } catch (e) {
+      debugPrint('API LoseAviatorBet error: $e');
+    }
+  }
+
+  Future<List<dynamic>?> getAviatorHistory(String userId) async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/api/aviator/history?userId=$userId'));
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      }
+    } catch (e) {
+      debugPrint('API GetAviatorHistory error: $e');
+    }
+    return null;
+  }
+
+
   // 3. Game Queries
   Future<Map<String, dynamic>?> getActivePeriod(String gameType) async {
     try {

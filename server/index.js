@@ -113,6 +113,19 @@ async function initializeDatabase() {
     // Ensure UPI columns are present in the users table for existing databases
     await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS upi_address VARCHAR(100);');
     await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS upi_name VARCHAR(100);');
+
+    // Ensure aviator_bets table is created
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS aviator_bets (
+          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+          user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          bet_amount DECIMAL(15, 2) NOT NULL CHECK (bet_amount > 0.00),
+          payout DECIMAL(15, 2) DEFAULT 0.00,
+          multiplier DECIMAL(10, 2) DEFAULT 0.00,
+          status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'won', 'lost')),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
   } catch (error) {
     console.error('Failed to initialize database tables:', error.message);
   }
@@ -437,6 +450,133 @@ app.get('/api/bets/my-history', async (req, res) => {
        WHERE b.user_id = $1 AND gp.game_type = $2
        ORDER BY b.created_at DESC LIMIT 100`,
       [userId, gameType]
+    );
+    res.json(query.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// 5b. Aviator Betting APIs
+app.post('/api/aviator/bet', async (req, res) => {
+  const { userId, betAmount } = req.body;
+  if (!userId || !betAmount) {
+    return res.status(400).json({ error: 'userId and betAmount required' });
+  }
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Check balance and lock wallet row
+      const wQuery = await client.query('SELECT balance FROM wallets WHERE user_id = $1 FOR UPDATE', [userId]);
+      if (wQuery.rows.length === 0) throw new Error('Wallet not found');
+
+      const balance = parseFloat(wQuery.rows[0].balance);
+      if (balance < betAmount) {
+        return res.status(400).json({ error: 'Insufficient balance' });
+      }
+
+      // Deduct balance
+      await client.query('UPDATE wallets SET balance = balance - $1 WHERE user_id = $2', [betAmount, userId]);
+
+      // Write Aviator bet record
+      const insertBet = await client.query(
+        'INSERT INTO aviator_bets (user_id, bet_amount, status) VALUES ($1, $2, \'pending\') RETURNING *',
+        [userId, betAmount]
+      );
+
+      await client.query('COMMIT');
+      res.json(insertBet.rows[0]);
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
+app.post('/api/aviator/cashout', async (req, res) => {
+  const { betId, multiplier } = req.body;
+  if (!betId || !multiplier) {
+    return res.status(400).json({ error: 'betId and multiplier required' });
+  }
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // Fetch the bet and lock
+      const betQuery = await client.query('SELECT * FROM aviator_bets WHERE id = $1 FOR UPDATE', [betId]);
+      if (betQuery.rows.length === 0) {
+        return res.status(404).json({ error: 'Bet not found' });
+      }
+
+      const bet = betQuery.rows[0];
+      if (bet.status !== 'pending') {
+        return res.status(400).json({ error: 'Bet is already settled' });
+      }
+
+      const betAmount = parseFloat(bet.bet_amount);
+      const payout = betAmount * multiplier;
+
+      // Update wallet balance
+      await client.query('UPDATE wallets SET balance = balance + $1 WHERE user_id = $2', [payout, bet.user_id]);
+
+      // Update bet status to won
+      const updateBet = await client.query(
+        'UPDATE aviator_bets SET status = \'won\', multiplier = $1, payout = $2 WHERE id = $3 RETURNING *',
+        [multiplier, payout, betId]
+      );
+
+      await client.query('COMMIT');
+      res.json(updateBet.rows[0]);
+    } catch (e) {
+      await client.query('ROLLBACK');
+      throw e;
+    } finally {
+      client.release();
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message || 'Internal server error' });
+  }
+});
+
+app.post('/api/aviator/lose', async (req, res) => {
+  const { betId } = req.body;
+  if (!betId) return res.status(400).json({ error: 'betId is required' });
+
+  try {
+    const updateBet = await pool.query(
+      'UPDATE aviator_bets SET status = \'lost\', multiplier = 0, payout = 0 WHERE id = $1 RETURNING *',
+      [betId]
+    );
+    if (updateBet.rows.length === 0) {
+      return res.status(404).json({ error: 'Bet not found' });
+    }
+    res.json(updateBet.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/api/aviator/history', async (req, res) => {
+  const { userId } = req.query;
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+  try {
+    const query = await pool.query(
+      'SELECT id, bet_amount as "amount", payout, multiplier, status, created_at as "timestamp" FROM aviator_bets WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50',
+      [userId]
     );
     res.json(query.rows);
   } catch (err) {

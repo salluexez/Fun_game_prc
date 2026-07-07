@@ -131,6 +131,11 @@ class HomeViewModel extends ChangeNotifier {
           imagePath: 'assets/images/main_screen_images/lotterycategory_202401231601472sqb.png',
           gradientColors: [Color(0xFFFA6557), Color(0xFFF13D30)],
         ),
+        RecommendedGame(
+          title: 'Aviator',
+          imagePath: 'assets/images/main_screen_images/gamecategory_20240412114937mcis.png',
+          gradientColors: [Color(0xFFFA6557), Color(0xFFF13D30)],
+        ),
       ],
       winnings: initialWinnings,
     );

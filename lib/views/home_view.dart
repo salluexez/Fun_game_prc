@@ -10,6 +10,7 @@ import 'login_view.dart';
 import 'register_view.dart';
 import 'deposit_view.dart';
 import 'withdraw_view.dart';
+import 'aviator_view.dart';
 import '../services/api_service.dart';
 import '../services/wallet_service.dart';
 
@@ -735,6 +736,11 @@ class _HomeViewState extends State<HomeView> {
             context,
             MaterialPageRoute(builder: (context) => const WingoView()),
           );
+        } else if (category.title == 'Original') {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const AviatorView()),
+          );
         } else {
           viewModel.onCategoryPressed(category);
         }
@@ -897,6 +903,11 @@ class _HomeViewState extends State<HomeView> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const TrxWingoView()),
+                );
+              } else if (game.title.toLowerCase().contains('aviator')) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AviatorView()),
                 );
               } else {
                 Navigator.push(
