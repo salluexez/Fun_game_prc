@@ -199,6 +199,9 @@ class _WithdrawViewState extends State<WithdrawView> {
                     
                     if (success) {
                       await _loadUserProfile();
+                      setState(() {
+                        _isSubmitting = false;
+                      });
                       if (!mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
