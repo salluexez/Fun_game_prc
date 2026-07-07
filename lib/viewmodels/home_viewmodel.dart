@@ -46,8 +46,9 @@ class HomeViewModel extends ChangeNotifier {
     _state = HomeState(
       logoImagePath: 'assets/images/logo/Zonex.png',
       bannerImages: const [
-        'assets/images/main_screen_images/Banner_202305270515371rsv.png',
-        'assets/images/main_screen_images/Banner_20230306180818gxxn.png',
+        'assets/images/main_screen_images/banner1.png',
+        'assets/images/main_screen_images/banner2.png',
+        'assets/images/main_screen_images/banner3.png',
       ],
       announcement: 'The website upgrade is complete. Before logging in, clear the browser cache. Add our official customer service line.',
       categories: const [

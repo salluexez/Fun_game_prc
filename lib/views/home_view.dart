@@ -11,6 +11,9 @@ import 'register_view.dart';
 import 'deposit_view.dart';
 import 'withdraw_view.dart';
 import 'aviator_view.dart';
+import 'language_view.dart';
+import 'announcement_view.dart';
+import 'about_us_view.dart';
 import '../services/api_service.dart';
 import '../services/wallet_service.dart';
 
@@ -26,6 +29,7 @@ class HomeView extends StatefulWidget {
 class _HomeViewState extends State<HomeView> {
   int _selectedIndex = 0;
   late final PageController _pageController;
+  String _selectedCategory = 'Popular';
 
   @override
   void initState() {
@@ -269,7 +273,7 @@ class _HomeViewState extends State<HomeView> {
                   ),
                 ),
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 100),
             ],
           ),
         );
@@ -290,6 +294,7 @@ class _HomeViewState extends State<HomeView> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      extendBody: true,
       appBar: PreferredSize(
         preferredSize: const Size.fromHeight(60.0),
         child: ClipRect(
@@ -334,21 +339,29 @@ class _HomeViewState extends State<HomeView> {
                     child: ListenableBuilder(
                       listenable: viewModel,
                       builder: (context, _) {
-                        return Image.asset(
-                          viewModel.state.logoImagePath,
-                          height: 34,
-                          fit: BoxFit.contain,
-                          errorBuilder: (context, error, stackTrace) {
-                            return const Text(
-                              'Zonex',
-                              style: TextStyle(
-                                color: Color(0xFFF34C43),
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.2,
-                              ),
-                            );
-                          },
+                        return ColorFiltered(
+                          colorFilter: const ColorFilter.matrix(<double>[
+                            1, 0, 0, 0, 0,
+                            0, 1, 0, 0, 0,
+                            0, 0, 1, 0, 0,
+                            -1, -1, -1, 3, 0,
+                          ]),
+                          child: Image.asset(
+                            viewModel.state.logoImagePath,
+                            height: 34,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              return const Text(
+                                'Zonex',
+                                style: TextStyle(
+                                  color: Color(0xFFF34C43),
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1.2,
+                                ),
+                              );
+                            },
+                          ),
                         );
                       },
                     ),
@@ -419,10 +432,7 @@ class _HomeViewState extends State<HomeView> {
                     // 9. Platform Menu Options Card
                     _buildPlatformMenuCard(),
                     
-                    // 10. Add to Desktop Capsule Button
-                    _buildAddToDesktopButton(),
-                    
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 100),
                   ],
                 ),
               );
@@ -729,33 +739,44 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _buildCategoryCard(BuildContext context, GameCategory category) {
+    final isSelected = _selectedCategory.toLowerCase() == category.title.toLowerCase();
     return GestureDetector(
       onTap: () {
-        if (category.title == 'Lottery') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const WingoView()),
+        setState(() {
+          _selectedCategory = category.title;
+        });
+
+        // Show a brief SnackBar for "Coming Soon" categories
+        final titleLower = category.title.toLowerCase();
+        if (titleLower == 'casino' || titleLower == 'sports' || titleLower == 'fishing') {
+          ScaffoldMessenger.of(context).clearSnackBars();
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${category.title} games will be added soon!'),
+              backgroundColor: const Color(0xFFF34C43),
+              duration: const Duration(seconds: 2),
+            ),
           );
-        } else if (category.title == 'Original') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const AviatorView()),
-          );
-        } else {
-          viewModel.onCategoryPressed(category);
         }
       },
       child: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: category.gradientColors,
+            colors: isSelected 
+                ? [const Color(0xFFF34C43), const Color(0xFFF8736B)] // Highlight selected category with a brand gradient
+                : category.gradientColors,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12),
+          border: isSelected 
+              ? Border.all(color: Colors.white, width: 2) 
+              : null,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.12),
+              color: isSelected 
+                  ? const Color(0xFFF34C43).withOpacity(0.3) 
+                  : Colors.black.withOpacity(0.12),
               blurRadius: 8,
               offset: const Offset(0, 4),
             ),
@@ -871,14 +892,65 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _buildRecommendationContent(BuildContext context) {
-    final recommendations = viewModel.state.recommendations;
+    final allRecommendations = viewModel.state.recommendations;
+    final catLower = _selectedCategory.toLowerCase();
+
+    List<RecommendedGame> filtered = [];
+
+    if (catLower == 'popular' || 
+        catLower == 'slots' || 
+        catLower == 'rummy' || 
+        catLower == 'original') {
+      // Shows all games
+      filtered = allRecommendations;
+    } else if (catLower == 'lottery') {
+      // Shows only Wingo, K3, and 5D (filters out Trx)
+      filtered = allRecommendations.where((game) {
+        final title = game.title.toLowerCase();
+        return title.contains('k3') || title.contains('5d') || (title.contains('wingo') && !title.contains('trx')) || (title.contains('win go') && !title.contains('trx'));
+      }).toList();
+    } else {
+      // Coming soon categories (Casino, Sports, Fishing)
+      filtered = [];
+    }
+
+    if (filtered.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 24.0),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF7F8FC),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.hourglass_empty, size: 48, color: Colors.grey.shade400),
+              const SizedBox(height: 12),
+              Text(
+                '$_selectedCategory Games',
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Coming Soon! Stay tuned.',
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        itemCount: recommendations.length,
+        itemCount: filtered.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 3,
           childAspectRatio: 0.78,
@@ -886,7 +958,7 @@ class _HomeViewState extends State<HomeView> {
           mainAxisSpacing: 10,
         ),
         itemBuilder: (context, index) {
-          final game = recommendations[index];
+          final game = filtered[index];
           return GestureDetector(
             onTap: () {
               if (game.title.toLowerCase().contains('k3')) {
@@ -1097,19 +1169,23 @@ class _HomeViewState extends State<HomeView> {
           _buildMenuItem(
             icon: Icons.public,
             title: 'Language',
-            onTap: () => viewModel.onCategoryPressed(
-              const GameCategory(
-                title: 'Language',
-                imagePath: '',
-                gradientColors: [],
-              ),
-            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LanguageView()),
+              );
+            },
           ),
           _buildDivider(),
           _buildMenuItem(
             icon: Icons.campaign,
             title: 'Announcement',
-            onTap: () => viewModel.onDetailPressed(),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AnnouncementView()),
+              );
+            },
           ),
           _buildDivider(),
           _buildMenuItem(
@@ -1125,40 +1201,15 @@ class _HomeViewState extends State<HomeView> {
           ),
           _buildDivider(),
           _buildMenuItem(
-            icon: Icons.menu_book,
-            title: "Beginner's Guide",
-            onTap: () => viewModel.onCategoryPressed(
-              const GameCategory(
-                title: 'Beginner Guide',
-                imagePath: '',
-                gradientColors: [],
-              ),
-            ),
-          ),
-          _buildDivider(),
-          _buildMenuItem(
             icon: Icons.inventory_2,
             title: 'About us',
-            onTap: () => viewModel.onCategoryPressed(
-              const GameCategory(
-                title: 'About Us',
-                imagePath: '',
-                gradientColors: [],
-              ),
-            ),
-          ),
-          _buildDivider(),
-          _buildMenuItem(
-            icon: Icons.file_download,
-            title: 'Download APP',
             showDivider: false,
-            onTap: () => viewModel.onCategoryPressed(
-              const GameCategory(
-                title: 'Download App',
-                imagePath: '',
-                gradientColors: [],
-              ),
-            ),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AboutUsView()),
+              );
+            },
           ),
         ],
       ),

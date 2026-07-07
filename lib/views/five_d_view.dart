@@ -49,12 +49,20 @@ class _FiveDContentState extends State<_FiveDContent> {
           onPressed: () => Navigator.pop(context),
         ),
         centerTitle: true,
-        title: Image.asset(
-          'assets/images/logo/Zonex.png',
-          height: 28,
-          errorBuilder: (context, error, stackTrace) => const Text(
-            'Zonex 5D',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+        title: ColorFiltered(
+          colorFilter: const ColorFilter.matrix(<double>[
+            1, 0, 0, 0, 0,
+            0, 1, 0, 0, 0,
+            0, 0, 1, 0, 0,
+            -1, -1, -1, 3, 0,
+          ]),
+          child: Image.asset(
+            'assets/images/logo/Zonex.png',
+            height: 28,
+            errorBuilder: (context, error, stackTrace) => const Text(
+              'Zonex 5D',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+            ),
           ),
         ),
         actions: [

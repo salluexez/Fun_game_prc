@@ -132,12 +132,20 @@ class _TrxWingoContentState extends State<_TrxWingoContent> {
           icon: const Icon(Icons.arrow_back_ios, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Image.asset(
-          'assets/images/logo/Zonex.png',
-          height: 28,
-          errorBuilder: (context, error, stackTrace) => const Text(
-            'Zonex TRX Wingo',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+        title: ColorFiltered(
+          colorFilter: const ColorFilter.matrix(<double>[
+            1, 0, 0, 0, 0,
+            0, 1, 0, 0, 0,
+            0, 0, 1, 0, 0,
+            -1, -1, -1, 3, 0,
+          ]),
+          child: Image.asset(
+            'assets/images/logo/Zonex.png',
+            height: 28,
+            errorBuilder: (context, error, stackTrace) => const Text(
+              'Zonex TRX Wingo',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20),
+            ),
           ),
         ),
         centerTitle: true,

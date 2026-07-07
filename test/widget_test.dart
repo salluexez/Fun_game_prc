@@ -21,8 +21,17 @@ void main() {
     // Verify that the platform recommendation header is present on HomeView
     expect(find.text('Platform recommendation'), findsOneWidget);
 
-    // Tap the 'Lottery' category card to navigate to WingoView
+    // Tap the 'Lottery' category card to filter the recommended games
     await tester.tap(find.text('Lottery'));
+    await tester.pumpAndSettle();
+
+    // Scroll to bring the 'Win Go' game tile into view
+    final wingoTileFinder = find.text('Win Go');
+    await tester.ensureVisible(wingoTileFinder);
+    await tester.pumpAndSettle();
+
+    // Now tap the 'Win Go' game tile in the filtered recommendations to navigate to WingoView
+    await tester.tap(wingoTileFinder);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 800));
 
@@ -35,8 +44,7 @@ void main() {
 
     // Go back to Home Screen
     await tester.tap(find.byIcon(Icons.arrow_back_ios));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 800));
+    await tester.pumpAndSettle();
 
     // Scroll down to bring K3 recommendation card into view
     final k3Finder = find.text('K3');

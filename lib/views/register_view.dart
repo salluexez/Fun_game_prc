@@ -123,12 +123,20 @@ class _RegisterViewState extends State<RegisterView> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Center(
-                    child: Image.asset(
-                      'assets/images/logo/Zonex.png',
-                      height: 32,
-                      errorBuilder: (context, error, stackTrace) => const Text(
-                        'Zonex',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+                    child: ColorFiltered(
+                      colorFilter: const ColorFilter.matrix(<double>[
+                        1, 0, 0, 0, 0,
+                        0, 1, 0, 0, 0,
+                        0, 0, 1, 0, 0,
+                        -1, -1, -1, 3, 0,
+                      ]),
+                      child: Image.asset(
+                        'assets/images/logo/Zonex.png',
+                        height: 32,
+                        errorBuilder: (context, error, stackTrace) => const Text(
+                          'Zonex',
+                          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 24),
+                        ),
                       ),
                     ),
                   ),
