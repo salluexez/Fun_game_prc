@@ -14,6 +14,9 @@ import 'aviator_view.dart';
 import 'language_view.dart';
 import 'announcement_view.dart';
 import 'about_us_view.dart';
+import 'bet_history_view.dart';
+import 'transaction_details_view.dart';
+import 'security_settings_view.dart';
 import '../services/api_service.dart';
 import '../services/wallet_service.dart';
 
@@ -245,11 +248,26 @@ class _HomeViewState extends State<HomeView> {
                 ),
                 child: Column(
                   children: [
-                    _buildAccountMenuItem(Icons.description_outlined, 'Bet History', () {}),
+                    _buildAccountMenuItem(Icons.description_outlined, 'Bet History', () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const BetHistoryView()),
+                      );
+                    }),
                     const Divider(height: 1, indent: 50),
-                    _buildAccountMenuItem(Icons.history_edu, 'Transaction Details', () {}),
+                    _buildAccountMenuItem(Icons.history_edu, 'Transaction Details', () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const TransactionDetailsView()),
+                      );
+                    }),
                     const Divider(height: 1, indent: 50),
-                    _buildAccountMenuItem(Icons.security, 'Security settings', () {}),
+                    _buildAccountMenuItem(Icons.security, 'Security settings', () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SecuritySettingsView()),
+                      );
+                    }),
                   ],
                 ),
               ),
@@ -659,7 +677,12 @@ class _HomeViewState extends State<HomeView> {
           const SizedBox(width: 8),
           // Detail button with flame icon
           GestureDetector(
-            onTap: viewModel.onDetailPressed,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AnnouncementView()),
+              );
+            },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -1399,7 +1422,7 @@ class _WinningWinningsTickerState extends State<WinningWinningsTicker> {
           axisAlignment: 0.0,
           child: Container(
             margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 5.0),
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+            padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 10.0),
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
@@ -1438,8 +1461,10 @@ class _WinningWinningsTickerState extends State<WinningWinningsTicker> {
                 Expanded(
                   child: Text(
                     info.username,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
-                      fontSize: 13.5,
+                      fontSize: 13.0,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF333333),
                     ),
